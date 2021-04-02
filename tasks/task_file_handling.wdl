@@ -4,7 +4,7 @@ task cat_files {
 
   input {
     Array[File] files_to_cat
-    String? docker_image = "theiagen/utility:1.0.0"
+    String? docker_image = "theiagen/utility:1.0"
 
   }
 
