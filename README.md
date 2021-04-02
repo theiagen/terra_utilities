@@ -1,1 +1,3 @@
-# terra_utilities
+# Terra Utilities
+
+Repo for various Terra utilities
