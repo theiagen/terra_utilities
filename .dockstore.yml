@@ -1,0 +1,7 @@
+version: 1.0
+workflows:
+ - name: concatonate_files
+   subclass: WDL
+   primaryDescriptorPath: /workflows/wf_cat)files.wdl
+   testParameterFiles:
+    - empty.json
