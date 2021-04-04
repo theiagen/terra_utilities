@@ -35,7 +35,7 @@ task cat_files {
 task zip_files {
 
   input {
-    Array[File] files_to_cat
+    Array[File] files_to_zip
     String zipped_file_name
     String? docker_image = "theiagen/utility:1.1"
 
