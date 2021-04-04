@@ -8,13 +8,13 @@ workflow mercury_batch {
 
 	}
 
-	call file_handling.cat_files{
+	call file_handling.zip_files{
 		input:
 			files_to_cat=files_to_cat
 	}
 
 	output {
-	    File      concatenateed_files  = cat_files.concatenated_files
+	    File      zipped_files  = zip_files.zipped_files
 
 	}
 }
