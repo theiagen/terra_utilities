@@ -4,6 +4,7 @@ task cat_files {
 
   input {
     Array[File] files_to_cat
+    String concatenated_file_name
     String? docker_image = "theiagen/utility:1.1"
 
   }
@@ -12,16 +13,16 @@ task cat_files {
 
   file_array=(~{sep=' ' files_to_cat})
 
-  touch concatenated_files
+  touch ~{concatenated_file_name}
 
   # cat files one by one and store them in the concatenated_files file
   for index in ${!file_array[@]}; do
     file=${file_array[$index]}
-    cat ${file} >> concatenated_files
+    cat ${file} >> ~{concatenated_file_name}
   done
 >>>
   output {
-    File    concatenated_files   = "concatenated_files"
+    File    concatenated_files   = "~{concatenated_file_name}"
   }
 
   runtime {
