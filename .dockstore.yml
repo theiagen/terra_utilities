@@ -2,7 +2,7 @@ version: 1.2
 workflows:
  - name: Concatenate_Column_Content
    subclass: WDL
-   primaryDescriptorPath: /workflows/wf_concatenate_files.wdl
+   primaryDescriptorPath: /workflows/wf_cat_files.wdl
    testParameterFiles:
     - empty.json
 workflows:
