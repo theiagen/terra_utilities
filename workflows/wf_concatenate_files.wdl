@@ -2,7 +2,7 @@ version 1.0
 
 import "../tasks/task_file_handling.wdl" as file_handling
 
-workflow concatenate_files {
+workflow concatenate_column_content {
 	input {
 		Array[File] files_to_cat
 	}

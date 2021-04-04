@@ -2,7 +2,7 @@ version 1.0
 
 import "../tasks/task_file_handling.wdl" as file_handling
 
-workflow mercury_batch {
+workflow zip_column_content {
 	input {
 		Array[File] files_to_zip
 	}
