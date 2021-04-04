@@ -45,14 +45,14 @@ task zip_files {
 
   file_array=(~{sep=' ' files_to_zip})
 
-  mkdir dir_of_files
+  mkdir ~{zipped_file_name}
 
   # cat files one by one and store them in the concatenated_files file
   for index in ${!file_array[@]}; do
     file=${file_array[$index]}
-    mv ${file} dir_of_files
+    mv ${file} ~{zipped_file_name}
   done
-  zip ~{zipped_file_name}.zip dir_of_files
+  zip -r ~{zipped_file_name}.zip ~{zipped_file_name}
 >>>
   output {
     File    zipped_files   = "~{zipped_file_name}.zip"
