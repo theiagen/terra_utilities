@@ -2,7 +2,7 @@ version 1.0
 
 import "../tasks/task_file_handling.wdl" as file_handling
 
-workflow mercury_batch {
+workflow concatenate_files {
 	input {
 		Array[File] files_to_cat
 	}
@@ -11,6 +11,6 @@ workflow mercury_batch {
 			files_to_cat=files_to_cat
 	}
 	output {
-	    File      concatenateed_files  = cat_files.concatenated_files
+	    File      concatenated_files  = cat_files.concatenated_files
 	}
 }
