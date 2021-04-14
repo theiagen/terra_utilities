@@ -1,11 +1,10 @@
 version: 1.2
 workflows:
- - name: Download_Column_Content
+ - name: Zip_Column_Content
    subclass: WDL
    primaryDescriptorPath: /workflows/wf_zip_column.wdl
    testParameterFiles:
     - empty.json
-workflows:
  - name: Concatenate_Column_Content
    subclass: WDL
    primaryDescriptorPath: /workflows/wf_cat_column.wdl
