@@ -1,6 +1,6 @@
 version: 1.2
 workflows:
- - name: Zip_Column_Content
+ - name: Download_Column_Content
    subclass: WDL
    primaryDescriptorPath: /workflows/wf_zip_column.wdl
    testParameterFiles:
