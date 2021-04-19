@@ -10,3 +10,23 @@ workflows:
    primaryDescriptorPath: /workflows/wf_cat_column.wdl
    testParameterFiles:
     - empty.json
+ - name: Import_SE_reads
+   subclass: WDL
+   primaryDescriptorPath: /workflows/wf_import_se_reads.wdl
+   testParameterFiles:
+    - empty.json
+ - name: Import_PE_reads
+   subclass: WDL
+   primaryDescriptorPath: /workflows/wf_import_pe_reads.wdl
+   testParameterFiles:
+    - empty.json
+ - name: BAM_to_FASTQ_SE
+   subclass: WDL
+   primaryDescriptorPath: /workflows/wf_bam_to_fastq_se.wdl
+   testParameterFiles:
+    - empty.json
+ - name: BAM_to_FASTQ_PE
+   subclass: WDL
+   primaryDescriptorPath: /workflows/wf_bam_to_fastq_pe.wdl
+   testParameterFiles:
+    - empty.json
