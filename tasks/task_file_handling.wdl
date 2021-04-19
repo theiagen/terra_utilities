@@ -86,7 +86,7 @@ task cp_reads_to_workspace_pe {
   String r2_basename  = basename(read2)
   command <<<
     cp ~{read1} ~{r1_basename}
-    cp ~{read2} ~(r2_basename)
+    cp ~{read2} ~{r2_basename}
 
 >>>
   output {
