@@ -1,5 +1,57 @@
 version 1.0
 
+task cp_reads_to_workspace_se {
+
+  input {
+    File	read1
+    String? docker_image = "theiagen/utility:1.1"
+
+  }
+  String r1_basename  = basename(read1)
+  command <<<
+    cp ~{read1} ~{r1_basename}
+
+>>>
+  output {
+    File    cp_read1   = "~{r1_basename}"
+  }
+
+  runtime {
+      docker:       "~{docker_image}"
+      memory:       "4 GB"
+      cpu:          4
+      disks:        "local-disk 100 SSD"
+      preemptible:  0
+  }
+}
+task cp_reads_to_workspace_pe {
+
+  input {
+    File	read1
+    File	read2
+    String? docker_image = "theiagen/utility:1.1"
+
+  }
+  String r1_basename  = basename(read1)
+  String r2_basename  = basename(read2)
+  command <<<
+    cp ~{read1} ~{r1_basename}
+    cp ~{read2} ~(r2_basename)
+
+>>>
+  output {
+    File    cp_read1   = "~{r1_basename}"
+    File    cp_read2   = "~{r2_basename}"
+  }
+
+  runtime {
+      docker:       "~{docker_image}"
+      memory:       "4 GB"
+      cpu:          4
+      disks:        "local-disk 100 SSD"
+      preemptible:  0
+  }
+}
 task cat_files {
 
   input {
