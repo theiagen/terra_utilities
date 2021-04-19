@@ -63,7 +63,7 @@ task cp_reads_to_workspace_se {
 
 >>>
   output {
-    File    cp_reads   = "~{r1_basename}"
+    File    cp_read1   = "~{r1_basename}"
   }
 
   runtime {

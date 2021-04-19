@@ -13,6 +13,6 @@ workflow import_se_read_files {
 	}
 
 output {
-    File  imported_read1       = cp_reads_to_workspace_se.cp_read1
+    File  imported_reads       = cp_reads_to_workspace_se.cp_read1
 }
 }
