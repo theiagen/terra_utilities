@@ -15,6 +15,6 @@ workflow bam_to_fastq_se {
 	}
 
 output {
-    File  read1       = fastq_from_bam_se.read1
+    File  reads       = fastq_from_bam_se.read1
 }
 }
