@@ -11,7 +11,7 @@ task fastq_from_bam_pe {
   }
   command <<<
     # ensure bam file is sorted
-    samtools sort -n ~{bam_files} > sorted.bam
+    samtools sort -n ~{bam_file} > sorted.bam
     #generate fastq files from bam; output singletons to separate file
     samtools fastq -f2 -F4 -1 ~{samplename}_R1.fastq.gz -2 ~{samplename}_R2.fastq.gz ~{bam_file} -s singletons.fastq.gz
 
@@ -39,7 +39,7 @@ task fastq_from_bam_se {
   }
   command <<<
     # ensure bam file is sorted
-    samtools sort -n ~{bam_files} > sorted.bam
+    samtools sort -n ~{bam_file} > sorted.bam
     #generate fastq files from bam; output singletons to separate file
     samtools fastq -f2 -F4 -1 ~{samplename}_R1.fastq.gz sorted.bam -s singletons.fastq.gz
 
