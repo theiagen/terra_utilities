@@ -1,5 +1,55 @@
 version 1.0
 
+
+task fastq_from_bam_pe {
+
+  input {
+    File	bam_file
+    String samplename
+    String? docker_image = "staphb/samtools:1.12"
+
+  }
+  command <<<
+    samtools fastq -f2 -F4 -1 ~{samplename}_R1.fastq.gz -2 ~{samplename}_R2.fastq.gz -s singletons.fastq.gz
+
+>>>
+  output {
+    File  read1 = "~{samplename}_R1.fastq.gz"
+    File  read2 = "~{samplename}_R2.fastq.gz"
+  }
+
+  runtime {
+      docker:       "~{docker_image}"
+      memory:       "4 GB"
+      cpu:          4
+      disks:        "local-disk 100 SSD"
+      preemptible:  0
+  }
+}
+task fastq_from_bam_se {
+
+  input {
+    File	bam_file
+    String samplename
+    String? docker_image = "staphb/samtools:1.12"
+
+  }
+  command <<<
+    samtools fastq -f2 -F4 -1 ~{samplename}_R1.fastq.gz -s singletons.fastq.gz
+
+>>>
+  output {
+    File    read1   = "~{samplename}_R1.fastq.gz"
+  }
+
+  runtime {
+      docker:       "~{docker_image}"
+      memory:       "4 GB"
+      cpu:          4
+      disks:        "local-disk 100 SSD"
+      preemptible:  0
+  }
+}
 task cp_reads_to_workspace_se {
 
   input {
