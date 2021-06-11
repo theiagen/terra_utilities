@@ -31,6 +31,8 @@ task fetch_bs {
     String    dataset
     String    api
     String    token
+    Int       mem_size_gb = 8
+    Int       CPUs = 2
   }
 
   command <<<
@@ -39,6 +41,11 @@ task fetch_bs {
     bs --api-server=~{api} --access-token=~{token} download dataset -n ~{dataset}_L002 -o .
     bs --api-server=~{api} --access-token=~{token} download dataset -n ~{dataset}_L003 -o .
     bs --api-server=~{api} --access-token=~{token} download dataset -n ~{dataset}_L004 -o .
+    
+    bs --api-server=~{api} --access-token=~{token} download dataset -n ~{dataset}_L1 -o .
+    bs --api-server=~{api} --access-token=~{token} download dataset -n ~{dataset}_L2 -o .
+    bs --api-server=~{api} --access-token=~{token} download dataset -n ~{dataset}_L3 -o .
+    bs --api-server=~{api} --access-token=~{token} download dataset -n ~{dataset}_L4 -o .
 
     for file in `ls *_R1_*`; do cat $file >> ~{sample}_R1.fastq.gz; done
     for file in `ls *_R2_*`; do cat $file >> ~{sample}_R2.fastq.gz; done
@@ -53,8 +60,8 @@ task fetch_bs {
 
   runtime {
     docker:       "theiagen/basespace_cli:1.2.1"
-    memory:       "8 GB"
-    cpu:          2
+    memory:       "~{mem_size_gb} GB"
+    cpu:          CPUs
     disks:        "local-disk 100 SSD"
     preemptible:  1
   }

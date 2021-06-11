@@ -30,11 +30,15 @@ task fetch_bs {
     String    dataset
     String    api
     String    token
+    Int       mem_size_gb=8
+    Int       CPUs = 2
   }
 
   command <<<
 
     bs --api-server=~{api} --access-token=~{token} download dataset -n ~{dataset}_L001 -o .
+    
+    bs --api-server=~{api} --access-token=~{token} download dataset -n ~{dataset}_L1 -o .
 
     mv *_R1_* ~{sample}_R1.fastq.gz
     mv *_R2_* ~{sample}_R2.fastq.gz
@@ -48,8 +52,8 @@ task fetch_bs {
 
   runtime {
     docker:       "theiagen/basespace_cli:1.2.1"
-    memory:       "8 GB"
-    cpu:          2
+    memory:       "~{mem_size_gb} GB"
+    cpu:          CPUs
     disks:        "local-disk 100 SSD"
     preemptible:  1
   }
