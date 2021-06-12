@@ -37,9 +37,9 @@ task fetch_bs {
 
   command <<<
 
-    bs --api-server=~{api} --access-token=~{token} download dataset -n ~{dataset}_L001 -o . --retry
+    bs --api-server=~{api} --access-token=~{token} download dataset -n ~{dataset}_L001 -o .
     
-    bs --api-server=~{api} --access-token=~{token} download dataset -n ~{dataset}_L1 -o . --retry
+    bs --api-server=~{api} --access-token=~{token} download dataset -n ~{dataset}_L1 -o .
 
     mv *_R1_* ~{sample}_R1.fastq.gz
     mv *_R2_* ~{sample}_R2.fastq.gz
