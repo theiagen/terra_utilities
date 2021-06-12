@@ -32,6 +32,7 @@ task fetch_bs {
     String    token
     Int       mem_size_gb=8
     Int       CPUs = 2
+    Int       preemptible = 0
   }
 
   command <<<
@@ -55,6 +56,6 @@ task fetch_bs {
     memory:       "~{mem_size_gb} GB"
     cpu:          CPUs
     disks:        "local-disk 100 SSD"
-    preemptible:  1
+    preemptible:  preemptible
   }
 }
