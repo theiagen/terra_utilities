@@ -40,7 +40,7 @@ task fetch_bs {
 
   command <<<
     #Set BaseSpace comand prefix
-    bs_command=bs --api-server=~{api_server} --access-token=~{access_token}
+    bs_command="bs --api-server=~{api_server} --access-token=~{access_token}"
   
     #Grab BaseSpace Run_ID from given BaseSpace Run Name
     run_id=$(${bs_command} list run | grep “~{basespace_run_name}" | awk -F "|" '{ print $3 }' )
