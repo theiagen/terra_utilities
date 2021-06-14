@@ -41,16 +41,19 @@ task fetch_bs {
   command <<<
     #Set BaseSpace comand prefix
     bs_command="bs --api-server=~{api_server} --access-token=~{access_token}"
+    echo "BS command: ${bs_command}"
   
     #Grab BaseSpace Run_ID from given BaseSpace Run Name
     run_id=$(${bs_command} list run | grep “~{basespace_run_name}" | awk -F "|" '{ print $3 }' )
+    echo "run_id: ${run_id}"
 
     #Grab BaseSpace Dataset ID from dataset lists within given run 
     dataset_id=$(${bs_command} list dataset —input-run=${run_id} | grep “~{dataset_name}” | awk -F "|" '{ print $3 }' ) 
-
+    echo "dataset_id: ${dataset_id}"
+    
     #Download reads by dataset ID
     ${bs_command} download dataset ${dataset_id} -o . --retry
-    
+        
     #Remove cruft from filename
     mv *_R1_* ~{samplename}_R1.fastq.gz
     mv *_R2_* ~{samplename}_R2.fastq.gz
