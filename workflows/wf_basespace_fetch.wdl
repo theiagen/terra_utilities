@@ -44,7 +44,7 @@ task fetch_bs {
     echo "BS command: ${bs_command}"
   
     #Grab BaseSpace Run_ID from given BaseSpace Run Name
-    run_id=$(${bs_command} list run | grep "~{basespace_run_name}" | awk -F "|" '{ print $3 }' )
+    run_id=$(${bs_command} list run | grep "~{basespace_run_name}" | awk -F "|" '{ print $3 }' | awk '{$1=$1;print}' )
     echo "run_id: ${run_id}"
 
     #Grab BaseSpace Dataset ID from dataset lists within given run 
