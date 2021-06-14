@@ -52,7 +52,7 @@ task fetch_bs {
     echo "dataset_id: ${dataset_id}"
     
     #Download reads by dataset ID
-    ${bs_command} download dataset ${dataset_id} -o . --retry
+    ${bs_command} download dataset -i ${dataset_id} -o . --retry
         
     #Remove cruft from BaseSpace read filenames
     mv *_R1_* ~{samplename}_R1.fastq.gz
