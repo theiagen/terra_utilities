@@ -48,12 +48,13 @@ task fetch_bs {
     echo "run_id: ${run_id}"
 
     #Grab BaseSpace Dataset ID from dataset lists within given run 
-    dataset_id=($(${bs_command} list dataset --input-run=${run_id} | grep "~{dataset_name}" | awk -F "|" '{ print $3 }' )) 
-    echo "dataset_id: ${dataset_id}"
+    dataset_id_array=($(${bs_command} list dataset --input-run=${run_id} | grep "~{dataset_name}" | awk -F "|" '{ print $3 }' )) 
+    echo "dataset_id: ${dataset_id_array[*]}"
     
     #Download reads by dataset ID
     for index in ${!dataset_id_array[@]}; do
       dataset_id=${dataset_id_array[$index]}
+      echo "for loop command: ${bs_command} download dataset -i ${dataset_id} -o . --retry"
       ${bs_command} download dataset -i ${dataset_id} -o . --retry
     done
     
