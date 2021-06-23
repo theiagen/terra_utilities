@@ -59,17 +59,16 @@ task fetch_bs {
     done
     
     #Combine non-empty read files into single file without BaseSpace filename cruft
-    touch ~{samplename}_R1.fastq.gz
+    ##FWD Read
     for fwd_read in *_R1_*; do
-      if [[ ! -s $fwd_read ]]; then 
+      if [[ -s $fwd_read ]]; then 
         cat $fwd_read >> ~{samplename}_R1.fastq.gz
       fi
     done
-    
-    touch ~{samplename}_R2.fastq.gz
-    for fwd_read in *_R2_*; do
-      if [[ ! -s $fwd_read ]]; then 
-        cat $fwd_read >> ~{samplename}_R2.fastq.gz
+    #REV Read
+    for rev_read in *_R2_*; do
+      if [[ -s $rev_read ]]; then 
+        cat $rev_read >> ~{samplename}_R2.fastq.gz
       fi
     done
   >>>
