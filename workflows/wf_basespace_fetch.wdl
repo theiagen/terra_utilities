@@ -54,14 +54,15 @@ task fetch_bs {
     #Download reads by dataset ID
     for index in ${!dataset_id_array[@]}; do
       dataset_id=${dataset_id_array[$index]}
-      echo "for loop command: ${bs_command} download dataset -i ${dataset_id} -o . --retry"
+      echo "for loop command (dataset download): ${bs_command} download dataset -i ${dataset_id} -o . --retry"
       ${bs_command} download dataset -i ${dataset_id} -o . --retry
     done
     
     #Combine non-empty read files into single file without BaseSpace filename cruft
     ##FWD Read
     for fwd_read in *_R1_*; do
-      if [[ -s $fwd_read ]]; then 
+      if [[ -s $fwd_read ]]; then
+        echo "for loop command (cat reads): cat $fwd_read >> ~{samplename}_R1.fastq.gz" 
         cat $fwd_read >> ~{samplename}_R1.fastq.gz
       fi
     done
