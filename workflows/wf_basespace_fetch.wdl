@@ -48,16 +48,29 @@ task fetch_bs {
     echo "run_id: ${run_id}"
 
     #Grab BaseSpace Dataset ID from dataset lists within given run 
-    dataset_id=$(${bs_command} list dataset --input-run=${run_id} | grep "~{dataset_name}" | awk -F "|" '{ print $3 }' ) 
+    dataset_id=($(${bs_command} list dataset --input-run=${run_id} | grep "~{dataset_name}" | awk -F "|" '{ print $3 }' )) 
     echo "dataset_id: ${dataset_id}"
     
     #Download reads by dataset ID
-    ${bs_command} download dataset -i ${dataset_id} -o . --retry
-        
-    #Remove cruft from BaseSpace read filenames
-    mv *_R1_* ~{samplename}_R1.fastq.gz
-    mv *_R2_* ~{samplename}_R2.fastq.gz
-
+    for index in ${!dataset_id_array[@]}; do
+      dataset_id=${dataset_id_array[$index]}
+      ${bs_command} download dataset -i ${dataset_id} -o . --retry
+    done
+    
+    #Combine non-empty read files into single file without BaseSpace filename cruft
+    touch ~{samplename}_R1.fastq.gz
+    for fwd_read in *_R1_*; do
+      if [[ ! -s $fwd_read ]]; then 
+        cat $fwd_read >> ~{samplename}_R1.fastq.gz
+      fi
+    done
+    
+    touch ~{samplename}_R2.fastq.gz
+    for fwd_read in *_R2_*; do
+      if [[ ! -s $fwd_read ]]; then 
+        cat $fwd_read >> ~{samplename}_R2.fastq.gz
+      fi
+    done
   >>>
 
   output {
