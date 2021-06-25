@@ -51,7 +51,7 @@ task fetch_bs {
     #Grab BaseSpace Dataset ID from dataset lists within given run 
     dataset_id_array=($(${bs_command} list dataset --input-run=${run_id} | grep "~{dataset_name}" | awk -F "|" '{ print $3 }' )) 
     echo "dataset_id: ${dataset_id_array[*]}"
-    echo "{$dataset_id_array[@]}" | tee NUMBER_LANES
+    echo "${#dataset_id_array[@]}" | tee NUMBER_LANES
     
     
     #Download reads by dataset ID
