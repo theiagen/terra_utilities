@@ -59,7 +59,7 @@ task fetch_bs {
       dataset_id=${dataset_id_array[$index]}
       mkdir dataset_${dataset_id} && cd dataset_${dataset_id}
       echo "for loop command (dataset download): ${bs_command} download dataset -i ${dataset_id} -o . --retry"
-      ${bs_command} download dataset -i ${dataset_id} -o . --retry && mv ..
+      ${bs_command} download dataset -i ${dataset_id} -o . --retry && cd ..
       
     done
     
