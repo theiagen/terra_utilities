@@ -78,9 +78,9 @@ task fetch_bs {
   >>>
 
   output {
-    File    read1="${samplename}_R1.fastq.gz"
-    File    read2="${samplename}_R2.fastq.gz"
-    Int     number_lanes=("NUMBER_LANES")
+    File    read1        = "${samplename}_R1.fastq.gz"
+    File    read2        = "${samplename}_R2.fastq.gz"
+    Int     number_lanes = read_int("NUMBER_LANES")
   }
 
   runtime {
