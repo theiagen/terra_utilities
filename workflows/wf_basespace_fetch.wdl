@@ -20,8 +20,9 @@ workflow basespace_fetch {
   }
 
   output {
-    File    read1   =fetch_bs.read1
-    File    read2   =fetch_bs.read2
+    File    read1        = fetch_bs.read1
+    File    read2        = fetch_bs.read2
+    Int     number_lanes = fetch_bs.number_lanes
   }
 }
 
@@ -50,6 +51,8 @@ task fetch_bs {
     #Grab BaseSpace Dataset ID from dataset lists within given run 
     dataset_id_array=($(${bs_command} list dataset --input-run=${run_id} | grep "~{dataset_name}" | awk -F "|" '{ print $3 }' )) 
     echo "dataset_id: ${dataset_id_array[*]}"
+    echo "{$dataset_id_array[@]}" | tee NUMBER_LANES
+    
     
     #Download reads by dataset ID
     for index in ${!dataset_id_array[@]}; do
@@ -77,6 +80,7 @@ task fetch_bs {
   output {
     File    read1="${samplename}_R1.fastq.gz"
     File    read2="${samplename}_R2.fastq.gz"
+    Int     number_lanes=("NUMBER_LANES")
   }
 
   runtime {
