@@ -35,8 +35,3 @@ workflows:
    primaryDescriptorPath: /workflows/wf_basespace_fetch.wdl
    testParameterFiles:
     - empty.json
- - name: BaseSpace_Fetch_MultiLane
-   subclass: WDL
-   primaryDescriptorPath: /workflows/wf_basespace_fetch_multiple_lanes.wdl
-   testParameterFiles:
-    - empty.json
