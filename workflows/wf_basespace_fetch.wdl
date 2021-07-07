@@ -70,7 +70,6 @@ task fetch_bs {
     for fwd_read in ./dataset_*/*_R1_*.fastq.gz; do
       if [[ -s $fwd_read ]]; then
         echo "for loop command (cat reads): cat $fwd_read >> ~{samplename}_R1.fastq.gz" 
-        md5sum $fwd_read
         cat $fwd_read >> ~{samplename}_R1.fastq.gz
       fi
     done
@@ -78,12 +77,9 @@ task fetch_bs {
     for rev_read in ./dataset_*/*_R2_*.fastq.gz; do
       if [[ -s $rev_read ]]; then 
         echo "for loop command (cat reads): cat $rev_read >> ~{samplename}_R2.fastq.gz" 
-        md5sum $rev_read 
         cat $rev_read >> ~{samplename}_R2.fastq.gz
       fi
     done
-    md5sum ~{samplename}_R1.fastq.gz
-    md5sum ~{samplename}_R2.fastq.gz
   >>>
 
   output {
