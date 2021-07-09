@@ -29,7 +29,6 @@ workflow basespace_fetch {
     
     File    read1        = fetch_bs.read1
     File    read2        = fetch_bs.read2
-    Int     number_lanes = fetch_bs.number_lanes
   }
 }
 
