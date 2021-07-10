@@ -20,6 +20,6 @@ workflow bam_to_fastq_se {
     String  bam_to_fastq_se_version        = version_capture.terra_utilities_version
     String  bam_to_fastq_se_analysis_date  = version_capture.date
     
-		File    reads  = fastq_from_bam_se.read1
+		File    reads  = fastq_from_bam_se.reads
   }
 }
