@@ -8,7 +8,6 @@ workflow import_pe_read_files {
 		File	read1
 		File	read2
 	}
-
 	call file_handling.cp_reads_to_workspace_pe {
     input:
       read1 = read1,
@@ -21,7 +20,7 @@ workflow import_pe_read_files {
     String  import_pe_version        = version_capture.terra_utilities_version
     String  import_pe_analysis_date  = version_capture.date
 
-    File    imported_read1           = cp_reads_to_workspace_pe.cp_read1
-		File    imported_read2           = cp_reads_to_workspace_pe.cp_read2
+    File    imported_read1  = cp_reads_to_workspace_pe.cp_read1
+		File    imported_read2  = cp_reads_to_workspace_pe.cp_read2
 }
 }

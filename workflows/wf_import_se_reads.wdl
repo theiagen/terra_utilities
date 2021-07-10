@@ -7,7 +7,6 @@ workflow import_se_read_files {
     input {
       File  reads
     }
-
     call file_handling.cp_reads_to_workspace_se {
     input:
       reads = reads

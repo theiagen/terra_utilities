@@ -3,32 +3,30 @@ version 1.0
 import "../tasks/task_versioning.wdl" as versioning
 
 workflow basespace_fetch {
-
   input {
-    String    samplename
-    String    dataset_name
-    String    basespace_run_name
-    String    api_server
-    String    access_token
+    String  samplename
+    String  dataset_name
+    String  basespace_run_name
+    String  api_server
+    String  access_token
   }
-
   call fetch_bs {
     input:
-      samplename=samplename,
-      dataset_name=dataset_name,
-      basespace_run_name=basespace_run_name,
-      api_server=api_server,
-      access_token=access_token
+      samplename          = samplename,
+      dataset_name        = dataset_name,
+      basespace_run_name  = basespace_run_name,
+      api_server          = api_server,
+      access_token        = access_token
   }
   call versioning.version_capture{
     input:
   }
   output {
-    String  basespace_fetch_version           = version_capture.terra_utilities_version
-    String  basespace_fetch_analysis_date     = version_capture.date
+    String  basespace_fetch_version        = version_capture.terra_utilities_version
+    String  basespace_fetch_analysis_date  = version_capture.date
     
-    File    read1        = fetch_bs.read1
-    File    read2        = fetch_bs.read2
+    File    read1  = fetch_bs.read1
+    File    read2  = fetch_bs.read2
   }
 }
 

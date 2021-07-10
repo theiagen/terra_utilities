@@ -17,6 +17,7 @@ workflow zip_column_content {
   output {
     String  bam_to_fastq_se_version        = version_capture.terra_utilities_version
     String  bam_to_fastq_se_analysis_date  = version_capture.date
-	  File    zipped_files                   = zip_files.zipped_files
+		
+	  File    zipped_files  = zip_files.zipped_files
 	}
 }
