@@ -8,7 +8,7 @@ task version_capture {
     volatile: true
   }
   command {
-    Terra_Utilities_Version="Terra Utilities v1.3.1-dev"
+    Terra_Utilities_Version="Terra Utilities v1.3.1"
     ~{default='' 'export TZ=' + timezone}
     date +"%Y-%m-%d" > TODAY
     echo $Terra_Utilities_Version > TU_VERSION
