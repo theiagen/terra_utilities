@@ -47,7 +47,7 @@ task fastq_from_bam_se {
 
 >>>
   output {
-    File    read1   = "~{samplename}_R1.fastq.gz"
+    File    reads   = "~{samplename}_R1.fastq.gz"
   }
 
   runtime {
@@ -61,17 +61,17 @@ task fastq_from_bam_se {
 task cp_reads_to_workspace_se {
 
   input {
-    File	read1
+    File	reads
     String? docker_image = "theiagen/utility:1.1"
 
   }
-  String r1_basename  = basename(read1)
+  String reads_basename  = basename(reads)
   command <<<
-    cp ~{read1} ~{r1_basename}
+    cp ~{reads} ~{reads_basename}
 
 >>>
   output {
-    File    cp_read1   = "~{r1_basename}"
+    File    cp_reads   = "~{reads_basename}"
   }
 
   runtime {
