@@ -7,12 +7,12 @@ workflow bam_to_fastq_se {
   input {
     File    bam_file
     String  samplename
-    }
+  }
   call file_handling.fastq_from_bam_se {
     input:
       bam_file    = bam_file,
       samplename  = samplename
-    }
+  }
   call versioning.version_capture{
     input:
   }
