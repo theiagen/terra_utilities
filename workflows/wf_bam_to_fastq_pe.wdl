@@ -5,14 +5,14 @@ import "../tasks/task_versioning.wdl" as versioning
 
 workflow bam_to_fastq_pe {
   input {
-    File	  bam_file
+    File    bam_file
     String  samplename
-	}
+  }
   call file_handling.fastq_from_bam_pe {
     input:
     bam_file    =	bam_file,
     samplename  = samplename
-	}
+  }
   call versioning.version_capture{
     input:
   }
