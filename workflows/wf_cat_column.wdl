@@ -15,9 +15,9 @@ workflow concatenate_column_content {
     input:
   }
   output {
-    String  concatenate_column_content_version        = version_capture.terra_utilities_version
-    String  concatenate_column_content_analysis_date  = version_capture.date
+    String concatenate_column_content_version = version_capture.terra_utilities_version
+    String concatenate_column_content_analysis_date = version_capture.date
 
-    File    concatenated_files  = cat_files.concatenated_files
+    File concatenated_files = cat_files.concatenated_files
   }
 }

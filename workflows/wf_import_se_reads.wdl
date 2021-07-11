@@ -5,7 +5,7 @@ import "../tasks/task_versioning.wdl" as versioning
 
 workflow import_se_read_files {
     input {
-      File  reads
+      File reads
     }
     call file_handling.cp_reads_to_workspace_se {
     input:
@@ -15,8 +15,8 @@ workflow import_se_read_files {
     input:
     }
  output {
-    String  import_se_version        = version_capture.terra_utilities_version
-    String  import_se_analysis_date  = version_capture.date
-    File    imported_reads           = cp_reads_to_workspace_se.cp_reads
-}
+    String import_se_version = version_capture.terra_utilities_version
+    String import_se_analysis_date = version_capture.date
+    File imported_reads = cp_reads_to_workspace_se.cp_reads
+  }
 }
