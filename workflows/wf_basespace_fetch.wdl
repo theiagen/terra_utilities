@@ -29,9 +29,7 @@ workflow basespace_fetch {
     File    read2  = fetch_bs.read2
   }
 }
-
 task fetch_bs {
-
   input {
     String    samplename
     String    dataset_name
@@ -42,7 +40,6 @@ task fetch_bs {
     Int       CPUs = 2
     Int       Preemptible = 1
   }
-
   command <<<
     #Set BaseSpace comand prefix
     bs_command="bs --api-server=~{api_server} --access-token=~{access_token}"
