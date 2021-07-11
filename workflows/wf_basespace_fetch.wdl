@@ -57,7 +57,6 @@ task fetch_bs {
     echo "dataset_id: ${dataset_id_array[*]}"
     echo "${#dataset_id_array[@]}" | tee NUMBER_LANES
     
-    
     #Download reads by dataset ID
     for index in ${!dataset_id_array[@]}; do
       dataset_id=${dataset_id_array[$index]}
@@ -66,7 +65,6 @@ task fetch_bs {
       echo "for loop command (dataset download): ${bs_command} download dataset -i ${dataset_id} -o . --retry"
       ${bs_command} download dataset -i ${dataset_id} -o . --retry && cd ..
       echo "dataset dirs: $(ls ./dataset_*/*)"
-      
     done
     
     #Combine non-empty read files into single file without BaseSpace filename cruft
@@ -77,7 +75,7 @@ task fetch_bs {
         cat $fwd_read >> ~{samplename}_R1.fastq.gz
       fi
     done
-    #REV Read
+    ##REV Read
     for rev_read in ./dataset_*/*_R2_*.fastq.gz; do
       if [[ -s $rev_read ]]; then 
         echo "for loop command (cat reads): cat $rev_read >> ~{samplename}_R2.fastq.gz" 
@@ -85,13 +83,11 @@ task fetch_bs {
       fi
     done
   >>>
-
   output {
     File    read1        = "${samplename}_R1.fastq.gz"
     File    read2        = "${samplename}_R2.fastq.gz"
     Int     number_lanes = read_int("NUMBER_LANES")
   }
-
   runtime {
     docker:       "theiagen/basespace_cli:1.2.1"
     memory:       "~{mem_size_gb} GB"
