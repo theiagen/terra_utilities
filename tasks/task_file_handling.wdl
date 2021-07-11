@@ -2,26 +2,22 @@ version 1.0
 
 
 task fastq_from_bam_pe {
-
   input {
     File	bam_file
     String samplename
     String? samtools_fastq_options
     String? docker_image = "staphb/samtools:1.12"
-
   }
   command <<<
     # ensure bam file is sorted
     samtools sort -n ~{bam_file} > sorted.bam
     #generate fastq files from bam; output singletons to separate file
     samtools fastq ~{samtools_fastq_options} -1 ~{samplename}_R1.fastq.gz -2 ~{samplename}_R2.fastq.gz ~{bam_file}
-
 >>>
   output {
     File read1 = "~{samplename}_R1.fastq.gz"
     File read2 = "~{samplename}_R2.fastq.gz"
   }
-
   runtime {
     docker: "~{docker_image}"
     memory: "4 GB"
