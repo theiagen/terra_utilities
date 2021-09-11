@@ -47,11 +47,11 @@ task fetch_bs {
 
     #Grab BaseSpace Run_ID from given BaseSpace Run Name
     run_id=$(${bs_command} list run | grep "~{basespace_run_name}" | awk -F "|" '{ print $3 }' | awk '{$1=$1;print}' )
-    echo "run_id: ${run_id}"
+    echo "run_id: ${run_id}" 
     
-    if [[ -z "{run_id}"]]
+    if [[ -z "{run_id}" ]]
     then 
-      echo "No run id found associated with input BaseSpace run name: ~{basespace_run_name}"
+      echo "No run id found associated with input BaseSpace run name: ~{basespace_run_name}" >&2
       exit 1
     fi
 
