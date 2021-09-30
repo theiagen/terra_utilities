@@ -48,48 +48,56 @@ task fetch_bs {
     #Grab BaseSpace Run_ID from given BaseSpace Run Name
     run_id=$(${bs_command} list run | grep "~{basespace_run_name}" | awk -F "|" '{ print $3 }' | awk '{$1=$1;print}' )
     echo "run_id: ${run_id}" 
-    
-    if [[ -z "${run_id}" ]]
+    if [[ ! -z "${run_id}" ]]
     then 
-      echo "No run id found associated with input BaseSpace run name: ~{basespace_run_name}" >&2
-      exit 1
+      #Grab BaseSpace Dataset ID from dataset lists within given run 
+      dataset_id_array=($(${bs_command} list dataset --input-run=${run_id} | grep "~{dataset_name}" | awk -F "|" '{ print $3 }' )) 
+      echo "dataset_id: ${dataset_id_array[*]}"
+    else 
+      #Try Grabbing BaseSpace Dataset ID from project name
+      project_id=$(${bs_command} list project | grep "~{basespace_run_name}" | awk -F "|" '{ print $3 }' | awk '{$1=$1;print}' )
+      echo "project_id: ${project_id}" 
+      if [[ ! -z "${project_id}" ]]
+      then 
+        dataset_id_array=($(${bs_command} list dataset --project-id=${run_id} | grep "~{dataset_name}" | awk -F "|" '{ print $3 }' )) 
+        echo "dataset_id: ${dataset_id_array[*]}"
+      else       
+        echo "No run or project id found associated with input basespace_run_name: ~{basespace_run_name}" >&2
+        exit 1
+      fi      
     fi
-
-    #Grab BaseSpace Dataset ID from dataset lists within given run 
-    dataset_id_array=($(${bs_command} list dataset --input-run=${run_id} | grep "~{dataset_name}" | awk -F "|" '{ print $3 }' )) 
-    echo "dataset_id: ${dataset_id_array[*]}"
-    echo "${#dataset_id_array[@]}" | tee NUMBER_LANES
 
     #Download reads by dataset ID
     for index in ${!dataset_id_array[@]}; do
       dataset_id=${dataset_id_array[$index]}
       mkdir ./dataset_${dataset_id} && cd ./dataset_${dataset_id}
-      echo "PWD: $(pwd)"
-      echo "for loop command (dataset download): ${bs_command} download dataset -i ${dataset_id} -o . --retry"
+      echo "dataset download: ${bs_command} download dataset -i ${dataset_id} -o . --retry"
       ${bs_command} download dataset -i ${dataset_id} -o . --retry && cd ..
-      echo "dataset dirs: $(ls ./dataset_*/*)"
+      echo -e "downladed data: $(ls ./dataset_*/*)"
     done
 
     #Combine non-empty read files into single file without BaseSpace filename cruft
     ##FWD Read
-    for fwd_read in ./dataset_*/*_R1_*.fastq.gz; do
+    lane_count=0
+    for fwd_read in ./dataset_*/~{dataset_name}*_R1_*.fastq.gz; do
       if [[ -s $fwd_read ]]; then
-        echo "for loop command (cat reads): cat $fwd_read >> ~{samplename}_R1.fastq.gz" 
+        echo "cat fwd reads: cat $fwd_read >> ~{samplename}_R1.fastq.gz" 
         cat $fwd_read >> ~{samplename}_R1.fastq.gz
+        lane_count=$((lane_count+1))
       fi
     done
     ##REV Read
-    for rev_read in ./dataset_*/*_R2_*.fastq.gz; do
+    for rev_read in ./dataset_*/~{dataset_name}*_R2_*.fastq.gz; do
       if [[ -s $rev_read ]]; then 
-        echo "for loop command (cat reads): cat $rev_read >> ~{samplename}_R2.fastq.gz" 
+        echo "cat rev reads: cat $rev_read >> ~{samplename}_R2.fastq.gz" 
         cat $rev_read >> ~{samplename}_R2.fastq.gz
       fi
     done
+    echo "Lane Count: ${lane_count}"
   >>>
   output {
     File read1 = "${samplename}_R1.fastq.gz"
     File read2 = "${samplename}_R2.fastq.gz"
-    Int number_lanes = read_int("NUMBER_LANES")
   }
   runtime {
     docker: "theiagen/basespace_cli:1.2.1"
