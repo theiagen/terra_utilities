@@ -38,6 +38,7 @@ task fetch_bs {
     String access_token
     Int mem_size_gb=8
     Int CPUs = 2
+    Int disk_size = 100
     Int Preemptible = 1
   }
   command <<<
@@ -103,7 +104,7 @@ task fetch_bs {
     docker: "theiagen/basespace_cli:1.2.1"
     memory: "~{mem_size_gb} GB"
     cpu: CPUs
-    disks: "local-disk 100 SSD"
+    disks: "local-disk ~{disk_size} SSD"
     preemptible: Preemptible
     maxRetries: 3
   }
