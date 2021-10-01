@@ -51,7 +51,7 @@ task fetch_bs {
     if [[ ! -z "${run_id}" ]]
     then 
       #Grab BaseSpace Dataset ID from dataset lists within given run 
-      dataset_id_array=($(${bs_command} list dataset --input-run=${run_id} | grep "~{dataset_name}_L" | awk -F "|" '{ print $3 }' )) 
+      dataset_id_array=($(${bs_command} list dataset --input-run=${run_id} | grep "~{dataset_name}" | awk -F "|" '{ print $3 }' )) 
       echo "dataset_id: ${dataset_id_array[*]}"
     else 
       #Try Grabbing BaseSpace Dataset ID from project name
@@ -59,7 +59,7 @@ task fetch_bs {
       echo "project_id: ${project_id}" 
       if [[ ! -z "${project_id}" ]]
       then 
-        dataset_id_array=($(${bs_command} list dataset --project-id=${run_id} | grep "~{dataset_name}_L" | awk -F "|" '{ print $3 }' )) 
+        dataset_id_array=($(${bs_command} list dataset --project-id=${run_id} | grep "~{dataset_name}" | awk -F "|" '{ print $3 }' )) 
         echo "dataset_id: ${dataset_id_array[*]}"
       else       
         echo "No run or project id found associated with input basespace_run_name: ~{basespace_run_name}" >&2
@@ -79,7 +79,7 @@ task fetch_bs {
     #Combine non-empty read files into single file without BaseSpace filename cruft
     ##FWD Read
     lane_count=0
-    for fwd_read in ./dataset_*/~{dataset_name}*_R1_*.fastq.gz; do
+    for fwd_read in ./dataset_*/~{dataset_name}_*_R1_*.fastq.gz; do
       if [[ -s $fwd_read ]]; then
         echo "cat fwd reads: cat $fwd_read >> ~{samplename}_R1.fastq.gz" 
         cat $fwd_read >> ~{samplename}_R1.fastq.gz
@@ -87,7 +87,7 @@ task fetch_bs {
       fi
     done
     ##REV Read
-    for rev_read in ./dataset_*/~{dataset_name}*_R2_*.fastq.gz; do
+    for rev_read in ./dataset_*/~{dataset_name}_*_R2_*.fastq.gz; do
       if [[ -s $rev_read ]]; then 
         echo "cat rev reads: cat $rev_read >> ~{samplename}_R2.fastq.gz" 
         cat $rev_read >> ~{samplename}_R2.fastq.gz
@@ -105,5 +105,6 @@ task fetch_bs {
     cpu: CPUs
     disks: "local-disk 100 SSD"
     preemptible: Preemptible
+    maxRetries: 3
   }
 }
