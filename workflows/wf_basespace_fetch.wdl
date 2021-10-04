@@ -4,16 +4,18 @@ import "../tasks/task_versioning.wdl" as versioning
 
 workflow basespace_fetch {
   input {
-    String samplename
-    String dataset_name
+    String sample_name
+    String bs_sample_name
+    String? bs_sample_id
     String basespace_run_name
     String api_server
     String access_token
   }
   call fetch_bs {
     input:
-      samplename = samplename,
-      dataset_name = dataset_name,
+      sample_name = sample_name,
+      bs_sample_id = bs_sample_id,
+      bs_sample_name = bs_sample_name,
       basespace_run_name = basespace_run_name,
       api_server = api_server,
       access_token = access_token
@@ -31,8 +33,9 @@ workflow basespace_fetch {
 }
 task fetch_bs {
   input {
-    String samplename
-    String dataset_name
+    String sample_name
+    String bs_sample_name
+    String? bs_sample_id
     String basespace_run_name
     String api_server
     String access_token
@@ -42,9 +45,22 @@ task fetch_bs {
     Int Preemptible = 1
   }
   command <<<
+    # set basespace name and id variables
+    if [[ ! -z "~{bs_sample_id}" ]]
+    then
+      sample_identifier="~{bs_sample_name}"
+      dataset_name="~{bs_sample_id}"
+    else
+      sample_identifier="~{bs_sample_name}"
+      dataset_name="~{bs_sample_name}"
+    fi
+    
+    # print all relevant input variables to stdout
+    echo -e "sample_identifier: ${sample_identifier}\ndataset_name: ${dataset_name}\nbasespace_run_name: ~{basespace_run_name}"
+      
     #Set BaseSpace comand prefix
     bs_command="bs --api-server=~{api_server} --access-token=~{access_token}"
-    echo "BS command: ${bs_command}"
+    echo "bs_command: ${bs_command}"
 
     #Grab BaseSpace Run_ID from given BaseSpace Run Name
     run_id=$(${bs_command} list run | grep "~{basespace_run_name}" | awk -F "|" '{ print $3 }' | awk '{$1=$1;print}' )
@@ -52,7 +68,7 @@ task fetch_bs {
     if [[ ! -z "${run_id}" ]]
     then 
       #Grab BaseSpace Dataset ID from dataset lists within given run 
-      dataset_id_array=($(${bs_command} list dataset --input-run=${run_id} | grep "~{dataset_name}" | awk -F "|" '{ print $3 }' )) 
+      dataset_id_array=($(${bs_command} list dataset --input-run=${run_id} | grep "${dataset_name}" | awk -F "|" '{ print $3 }' )) 
       echo "dataset_id: ${dataset_id_array[*]}"
     else 
       #Try Grabbing BaseSpace Dataset ID from project name
@@ -60,7 +76,7 @@ task fetch_bs {
       echo "project_id: ${project_id}" 
       if [[ ! -z "${project_id}" ]]
       then 
-        dataset_id_array=($(${bs_command} list dataset --project-id=${run_id} | grep "~{dataset_name}" | awk -F "|" '{ print $3 }' )) 
+        dataset_id_array=($(${bs_command} list dataset --project-id=${run_id} | grep "${dataset_name}" | awk -F "|" '{ print $3 }' )) 
         echo "dataset_id: ${dataset_id_array[*]}"
       else       
         echo "No run or project id found associated with input basespace_run_name: ~{basespace_run_name}" >&2
@@ -80,25 +96,25 @@ task fetch_bs {
     #Combine non-empty read files into single file without BaseSpace filename cruft
     ##FWD Read
     lane_count=0
-    for fwd_read in ./dataset_*/~{dataset_name}_*R1_*.fastq.gz; do
+    for fwd_read in ./dataset_*/${sample_identifier}_*R1_*.fastq.gz; do
       if [[ -s $fwd_read ]]; then
-        echo "cat fwd reads: cat $fwd_read >> ~{samplename}_R1.fastq.gz" 
-        cat $fwd_read >> ~{samplename}_R1.fastq.gz
+        echo "cat fwd reads: cat $fwd_read >> ~{sample_name}_R1.fastq.gz" 
+        cat $fwd_read >> ~{sample_name}_R1.fastq.gz
         lane_count=$((lane_count+1))
       fi
     done
     ##REV Read
-    for rev_read in ./dataset_*/~{dataset_name}_*R2_*.fastq.gz; do
+    for rev_read in ./dataset_*/${sample_identifier}_*R2_*.fastq.gz; do
       if [[ -s $rev_read ]]; then 
-        echo "cat rev reads: cat $rev_read >> ~{samplename}_R2.fastq.gz" 
-        cat $rev_read >> ~{samplename}_R2.fastq.gz
+        echo "cat rev reads: cat $rev_read >> ~{sample_name}_R2.fastq.gz" 
+        cat $rev_read >> ~{sample_name}_R2.fastq.gz
       fi
     done
     echo "Lane Count: ${lane_count}"
   >>>
   output {
-    File read1 = "${samplename}_R1.fastq.gz"
-    File read2 = "${samplename}_R2.fastq.gz"
+    File read1 = "~{sample_name}_R1.fastq.gz"
+    File read2 = "~{sample_name}_R2.fastq.gz"
   }
   runtime {
     docker: "theiagen/basespace_cli:1.2.1"
@@ -106,6 +122,5 @@ task fetch_bs {
     cpu: CPUs
     disks: "local-disk ~{disk_size} SSD"
     preemptible: Preemptible
-    maxRetries: 3
   }
 }
