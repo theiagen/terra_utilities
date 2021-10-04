@@ -5,8 +5,8 @@ import "../tasks/task_versioning.wdl" as versioning
 workflow basespace_fetch {
   input {
     String sample_name
-    String bs_sample_name
-    String? bs_sample_id
+    String basespace_sample_name
+    String? basespace_sample_id
     String basespace_run_name
     String api_server
     String access_token
@@ -14,8 +14,8 @@ workflow basespace_fetch {
   call fetch_bs {
     input:
       sample_name = sample_name,
-      bs_sample_id = bs_sample_id,
-      bs_sample_name = bs_sample_name,
+      basespace_sample_id = basespace_sample_id,
+      basespace_sample_name = basespace_sample_name,
       basespace_run_name = basespace_run_name,
       api_server = api_server,
       access_token = access_token
@@ -34,8 +34,8 @@ workflow basespace_fetch {
 task fetch_bs {
   input {
     String sample_name
-    String bs_sample_name
-    String? bs_sample_id
+    String basespace_sample_name
+    String? basespace_sample_id
     String basespace_run_name
     String api_server
     String access_token
@@ -46,13 +46,13 @@ task fetch_bs {
   }
   command <<<
     # set basespace name and id variables
-    if [[ ! -z "~{bs_sample_id}" ]]
+    if [[ ! -z "~{basespace_sample_id}" ]]
     then
-      sample_identifier="~{bs_sample_name}"
-      dataset_name="~{bs_sample_id}"
+      sample_identifier="~{basespace_sample_name}"
+      dataset_name="~{basespace_sample_id}"
     else
-      sample_identifier="~{bs_sample_name}"
-      dataset_name="~{bs_sample_name}"
+      sample_identifier="~{basespace_sample_name}"
+      dataset_name="~{basespace_sample_name}"
     fi
     
     # print all relevant input variables to stdout
