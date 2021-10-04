@@ -28,7 +28,7 @@ workflow basespace_fetch {
     String basespace_fetch_analysis_date = version_capture.date
     
     File read1 = fetch_bs.read1
-    File read2 = fetch_bs.read2
+    File? read2 = fetch_bs.read2
   }
 }
 task fetch_bs {
@@ -114,7 +114,7 @@ task fetch_bs {
   >>>
   output {
     File read1 = "~{sample_name}_R1.fastq.gz"
-    File read2 = "~{sample_name}_R2.fastq.gz"
+    File? read2 = "~{sample_name}_R2.fastq.gz"
   }
   runtime {
     docker: "theiagen/basespace_cli:1.2.1"
