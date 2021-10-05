@@ -7,7 +7,7 @@ workflow basespace_fetch {
     String sample_name
     String basespace_sample_name
     String? basespace_sample_id
-    String basespace_run_name
+    String basespace_container
     String api_server
     String access_token
   }
@@ -16,7 +16,7 @@ workflow basespace_fetch {
       sample_name = sample_name,
       basespace_sample_id = basespace_sample_id,
       basespace_sample_name = basespace_sample_name,
-      basespace_run_name = basespace_run_name,
+      basespace_container = basespace_container,
       api_server = api_server,
       access_token = access_token
   }
@@ -36,7 +36,7 @@ task fetch_bs {
     String sample_name
     String basespace_sample_name
     String? basespace_sample_id
-    String basespace_run_name
+    String basespace_container
     String api_server
     String access_token
     Int mem_size_gb=8
@@ -56,14 +56,14 @@ task fetch_bs {
     fi
     
     # print all relevant input variables to stdout
-    echo -e "sample_identifier: ${sample_identifier}\ndataset_name: ${dataset_name}\nbasespace_run_name: ~{basespace_run_name}"
+    echo -e "sample_identifier: ${sample_identifier}\ndataset_name: ${dataset_name}\nbasespace_container: ~{basespace_container}"
       
     #Set BaseSpace comand prefix
     bs_command="bs --api-server=~{api_server} --access-token=~{access_token}"
     echo "bs_command: ${bs_command}"
 
     #Grab BaseSpace Run_ID from given BaseSpace Run Name
-    run_id=$(${bs_command} list run | grep "~{basespace_run_name}" | awk -F "|" '{ print $3 }' | awk '{$1=$1;print}' )
+    run_id=$(${bs_command} list run | grep "~{basespace_container}" | awk -F "|" '{ print $3 }' | awk '{$1=$1;print}' )
     echo "run_id: ${run_id}" 
     if [[ ! -z "${run_id}" ]]
     then 
@@ -72,14 +72,14 @@ task fetch_bs {
       echo "dataset_id: ${dataset_id_array[*]}"
     else 
       #Try Grabbing BaseSpace Dataset ID from project name
-      project_id=$(${bs_command} list project | grep "~{basespace_run_name}" | awk -F "|" '{ print $3 }' | awk '{$1=$1;print}' )
+      project_id=$(${bs_command} list project | grep "~{basespace_container}" | awk -F "|" '{ print $3 }' | awk '{$1=$1;print}' )
       echo "project_id: ${project_id}" 
       if [[ ! -z "${project_id}" ]]
       then 
         dataset_id_array=($(${bs_command} list dataset --project-id=${run_id} | grep "${dataset_name}" | awk -F "|" '{ print $3 }' )) 
         echo "dataset_id: ${dataset_id_array[*]}"
       else       
-        echo "No run or project id found associated with input basespace_run_name: ~{basespace_run_name}" >&2
+        echo "No run or project id found associated with input basespace_container: ~{basespace_container}" >&2
         exit 1
       fi      
     fi
