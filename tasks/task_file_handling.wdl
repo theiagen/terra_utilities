@@ -6,7 +6,7 @@ task fastq_from_bam_pe {
     File	bam_file
     String samplename
     String? samtools_fastq_options
-    String? docker_image = "staphb/samtools:1.12"
+    String? docker_image = "quay.io/staphb/samtools:1.12"
   }
   command <<<
     # ensure bam file is sorted
@@ -31,7 +31,7 @@ task fastq_from_bam_se {
     File	bam_file
     String samplename
     String? samtools_fastq_options
-    String? docker_image = "staphb/samtools:1.12"
+    String? docker_image = "quay.io/staphb/samtools:1.12"
   }
   command <<<
     # ensure bam file is sorted
@@ -53,7 +53,7 @@ task fastq_from_bam_se {
 task cp_reads_to_workspace_se {
   input {
     File reads
-    String? docker_image = "theiagen/utility:1.1"
+    String? docker_image = "quay.io/theiagen/utility:1.1"
   }
   String reads_basename  = basename(reads)
   command <<<
@@ -74,7 +74,7 @@ task cp_reads_to_workspace_pe {
   input {
     File read1
     File read2
-    String? docker_image = "theiagen/utility:1.1"
+    String? docker_image = "quay.io/theiagen/utility:1.1"
   }
   String r1_basename = basename(read1)
   String r2_basename = basename(read2)
@@ -98,7 +98,7 @@ task cat_files {
   input {
     Array[File] files_to_cat
     String concatenated_file_name
-    String? docker_image = "theiagen/utility:1.1"
+    String? docker_image = "quay.io/theiagen/utility:1.1"
   }
   command <<<
     file_array=(~{sep=' ' files_to_cat})
@@ -125,7 +125,7 @@ task zip_files {
   input {
     Array[File] files_to_zip
     String zipped_file_name
-    String? docker_image = "theiagen/utility:1.1"
+    String? docker_image = "quay.io/theiagen/utility:1.1"
   }
   command <<<
     file_array=(~{sep=' ' files_to_zip})
