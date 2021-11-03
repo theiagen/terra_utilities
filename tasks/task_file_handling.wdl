@@ -159,17 +159,16 @@ task transfer_files {
     String? docker_image = "quay.io/theiagen/utility:1.1"
   }
   command <<<
-    TODAY=$(date +"%Y-%m-%d")
     file_path_array="~{sep=' ' files_to_transfer}"
 
     gsutil -m cp -n ${file_path_array[@]} ~{target_bucket}
     
-    echo "transferred_files" > ${TODAY}_transferred_files.tsv
-    gsutil ls ~{target_bucket} >> ${TODAY}_transfer_files.tsv        
+    echo "transferred_files" > transferred_files.tsv
+    gsutil ls ~{target_bucket} >> transferred_files.tsv        
 
 >>>
   output {
-    File transferred_files = "*_transfer_files.tsv"
+    File transferred_files = "transferred_files.tsv"
   }
   runtime {
       docker: "~{docker_image}"

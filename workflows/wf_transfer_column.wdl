@@ -20,6 +20,6 @@ workflow transfer_column_content {
     String transfer_column_content_version = version_capture.terra_utilities_version
     String transfer_column_content_analysis_date = version_capture.date
 
-    File transfered_files = transfer_files.transferred_files
+    File transferred_files = transfer_files.transferred_files
   }
 }
