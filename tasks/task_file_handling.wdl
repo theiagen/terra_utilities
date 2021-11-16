@@ -164,11 +164,11 @@ task transfer_files {
     gsutil -m cp -n ${file_path_array[@]} ~{target_bucket}
     
     echo "transferred_files" > transferred_files.tsv
-    gsutil ls ~{target_bucket} >> transferred_files.tsv        
+    gsutil ls ~{target_bucket} >> bucket_files.tsv        
 
 >>>
   output {
-    File transferred_files = "transferred_files.tsv"
+    File bucket_files = "bucket_files.tsv"
   }
   runtime {
       docker: "~{docker_image}"

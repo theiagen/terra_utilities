@@ -5,7 +5,7 @@ import "../tasks/task_versioning.wdl" as versioning
 
 workflow transfer_assembly_files {
   input {
-    Array[File] assemblies
+    Array[String] assemblies
     Array[String] samplenames
     Array[Float] percent_reference_coverage
     String target_root_entity
@@ -36,19 +36,17 @@ workflow transfer_assembly_files {
     String transfer_assembies_version = version_capture.terra_utilities_version
     String transfer_assemblies_analysis_date = version_capture.date
 
-    File transferred_files = transfer_files.transferred_files
+    File bucket_files = transfer_files.bucket_files
     File assembly_data_table = create_assembly_data_table.assembly_data_table
   }
 }
 
 task filter_assemblies {
   input {
-    Array[File] assemblies
+    Array[String] assemblies
     Array[Float] percent_reference_coverage
     Int percent_reference_coverage_threshold = 90
     Array[String] samplenames
-    Int CPUs = 4
-    Int mem_size_gb = 8
     String? docker_image = "quay.io/theiagen/utility:1.1"
   }
   command <<<
@@ -84,12 +82,11 @@ task filter_assemblies {
       assembly=${assembly_array[$index]}
       reference_coverage=${reference_coverage_array[$index]}
       reference_coverage=${reference_coverage%.*}
-      echo "Echo reference coverage: ${reference_coverage}" 
 
       if [ "${reference_coverage}" -ge "~{percent_reference_coverage_threshold}" ] ; then
         passed_assemblies=( "${passed_assemblies[@]}" "${assembly}")
         passed_samplenames=( "${passed_samplenames[@]}" "${samplename}")
-        echo -e "\t$samplename passes coverage threshold"
+        echo -e "\t$samplename coverage (${reference_coverage}) passes threshold (~{percent_reference_coverage_threshold})"
         echo -e "$samplename\t$reference_coverage" >> assemblies_included.tsv
       else
         echo -e "\t$samplename coverage (${reference_coverage}) does not meet coverage threshold (~{percent_reference_coverage_threshold})"
@@ -115,9 +112,9 @@ task filter_assemblies {
   }
   runtime {
       docker: "~{docker_image}"
-      memory: "~{mem_size_gb} GB"
-      cpu: CPUs
-      disks: "local-disk 100 SSD"
+      memory: "1 GB"
+      cpu: 1
+      disks: "local-disk 10 HDD"
       preemptible: 0
   }
 }
@@ -140,13 +137,14 @@ task create_assembly_data_table {
     for index in ${!samplename_array[@]}; do
       samplename=${samplename_array[$index]}
       assembly=${assembly_array[$index]}
-      gcp_address="~{target_bucket}${assembly}" 
+      gcp_address="~{target_bucket}${samplename}*.fasta" 
       
       echo "$samplename gcp_address = ${gcp_address}"
-      if [ $(gsutil stat ${gcp_address}; echo$?) == 1]; then
+      if [ $(gsutil -q stat ${gcp_address}; echo $?) == 1 ]; then
         echo "${assembly} does not exist in ~{target_bucket}"
         exit 1
       else 
+        gcp_address=$(gsutil ls ${gcp_address})
         echo -e "${samplename}\t${gcp_address}" >> assembly_data_table.tsv
       fi
     done
@@ -159,6 +157,5 @@ task create_assembly_data_table {
     cpu: 1
     docker: "quay.io/theiagen/utility:1.1"
     disks: "local-disk 10 HDD"
-    dx_instance_type: "mem1_ssd1_v2_x2" 
   }
 }
