@@ -66,8 +66,8 @@ task filter_assemblies {
 
     #Ensure assembly, meta, and vadr arrays are of equal length
     echo "Samples: $samplename_array_len, Assemblies: $assembly_array_len, percent_reference_coverages: $referece_coverage_array_len"
-    if [ "$samplename_array_len" -ne "referece_coverage_array_len" || "$samplename_array_len" -ne "$assembly_array_len" ]; then
-      echo "Input arrays are of unequal length. samplenames:$samplename_id_array_len, percent coverage: $reference_coverage_array_len, assemblies: $assembly_array_len" >&2
+    if [ "$samplename_array_len" -ne "$referece_coverage_array_len" ] || [ "$samplename_array_len" -ne "$assembly_array_len" ]; then
+      echo "Input arrays are of unequal length. Samples: $samplename_array_len, Assemblies: $assembly_array_len, percent_reference_coverages: $referece_coverage_array_len" >&2
       exit 1
     else 
       echo "Input arrays are of equal length. Samples: $samplename_array_len, Assemblies: $assembly_array_len, percent_reference_coverages: $referece_coverage_array_len"
@@ -97,9 +97,14 @@ task filter_assemblies {
     passed_assemblies_len=$(echo "${#passed_assemblies[@]}")
     passed_samplenames_len=$(echo "${#passed_samplenames[@]}")
     # sanity check before completing task
-    if  [ "$passed_assemblies_len" -ne "passed_assemblies_len" ] ; then 
-      echo "oUTPUT arrays are of unequal length. samplenames:$passed_samplenames_len; assemblies: $passed_assemblies_len" >&2
+    if  [ "$passed_assemblies_len" -ne "$passed_samplenames_len" ] ; then 
+      echo "OUTPUT arrays are of unequal length. samplenames:$passed_samplenames_len; assemblies: $passed_assemblies_len" >&2
       exit 1
+    elif [ "${passed_assemblies_len}" == 1 ] ; then 
+      echo "No assemblies passed coverage threshold" >&2
+      exit 1
+    else 
+      echo "OUTPUT arrays are of equal length. samplenames:$passed_samplenames_len; assemblies: $passed_assemblies_len"
     fi
 
     printf '%s\n' "${passed_assemblies[@]}" > PASSED_ASSEMBLIES
