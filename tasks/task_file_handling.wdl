@@ -153,6 +153,7 @@ task zip_files {
 task transfer_files {
   input {
     Array[String] files_to_transfer
+    Array[String] samplenames
     String target_bucket
     Int CPUs = 4
     Int mem_size_gb = 8
@@ -160,15 +161,29 @@ task transfer_files {
   }
   command <<<
     file_path_array="~{sep=' ' files_to_transfer}"
-
+    samplename_array="~{sep=' ' samplenames}"
+    echo -e "entity:transferred_files_id\ttransferred_file" > transferred_files.tsv
+    
+    #transfer files to target bucket
     gsutil -m cp -n ${file_path_array[@]} ~{target_bucket}
     
-    echo "transferred_files" > transferred_files.tsv
-    gsutil ls ~{target_bucket} >> bucket_files.tsv        
-
+    #create datatable for transferred files
+    for index in ${!file_path_array[@]}; do
+      transferred_file=${file_path_array[@]}
+      transferred_file=$(echo ${transfer_file} | awk -F "/" '{print $NF}')
+      
+      gcp_address="~{target_bucket}${transferred_file}"
+      
+      if [ $(gsutil -q stat ${gcp_address}; echo $?) == 1 ]; then 
+        echo "${transferred_file} does not exist in ~{target_bucket}"
+      else
+        echo -e "${samplename}\t${gcp_address}" >> transferred_files.tsv
+      fi
+    done
+  
 >>>
   output {
-    File bucket_files = "bucket_files.tsv"
+    File transferred_files = "transferred_files.tsv"
   }
   runtime {
       docker: "~{docker_image}"
