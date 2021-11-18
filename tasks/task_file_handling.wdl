@@ -169,9 +169,9 @@ task transfer_files {
     
     #create datatable for transferred files
     for index in ${!file_path_array[@]}; do
-      transferred_file=${file_path_array$[index]}
+      transferred_file=${file_path_array[$index]}
       transferred_file=$(echo ${transferred_file} | awk -F "/" '{print $NF}')
-      samplename=${samplename_array$[index]}
+      samplename=${samplename_array[$index]}
       
       gcp_address="~{target_bucket}${transferred_file}"
       
