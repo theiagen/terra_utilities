@@ -169,15 +169,16 @@ task transfer_files {
     
     #create datatable for transferred files
     for index in ${!file_path_array[@]}; do
-      transferred_file=${file_path_array[@]}
+      transferred_file=${file_path_array$[index]}
       transferred_file=$(echo ${transferred_file} | awk -F "/" '{print $NF}')
+      samplename=${samplename_array$[index]}
       
       gcp_address="~{target_bucket}${transferred_file}"
       
       if [ $(gsutil -q stat ${gcp_address}; echo $?) == 1 ]; then 
         echo "${transferred_file} does not exist in ~{target_bucket}"
       else
-        echo -e "~{samplename}\t${gcp_address}" >> transferred_files.tsv
+        echo -e "${samplename}\t${gcp_address}" >> transferred_files.tsv
       fi
     done
   
