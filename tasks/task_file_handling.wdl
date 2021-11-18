@@ -160,12 +160,12 @@ task transfer_files {
     String? docker_image = "quay.io/theiagen/utility:1.1"
   }
   command <<<
-    file_path_array=(~{sep=' ' files_to_transfer})
+    file_path_array=~{sep=' ' files_to_transfer})
     samplename_array=(~{sep=' ' samplenames})
     echo -e "entity:transferred_files_id\ttransferred_file" > transferred_files.tsv
     
     #transfer files to target bucket
-    gsutil -m cp -n ${file_path_array[@]} ~{target_bucket}
+    gsutil -m cp -n "${file_path_array[@]}" ~{target_bucket}
     
     #create datatable for transferred files
     for index in ${!file_path_array[@]}; do
