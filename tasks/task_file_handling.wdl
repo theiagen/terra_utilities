@@ -160,8 +160,8 @@ task transfer_files {
     String? docker_image = "quay.io/theiagen/utility:1.1"
   }
   command <<<
-    file_path_array="~{sep=' ' files_to_transfer}"
-    samplename_array="~{sep=' ' samplenames}"
+    file_path_array=(~{sep=' ' files_to_transfer})
+    samplename_array=(~{sep=' ' samplenames})
     echo -e "entity:transferred_files_id\ttransferred_file" > transferred_files.tsv
     
     #transfer files to target bucket
@@ -174,10 +174,12 @@ task transfer_files {
       samplename=${samplename_array[$index]}
       
       gcp_address="~{target_bucket}${transferred_file}"
+      echo "GCP address: ${gcp_address}"
       
-      if [ $(gsutil -q stat ${gcp_address}; echo $?) == 1 ]; then 
-        echo "${transferred_file} does not exist in ~{target_bucket}"
+      if [ $(gsutil -q stat ${gcp_address}; echo $?) == 1 ]; then
+        echo "${transferred_file} does not exist in ~{target_bucket}" >&2
       else
+        echo "${transferred_file} found in ~{target_bucket}"
         echo -e "${samplename}\t${gcp_address}" >> transferred_files.tsv
       fi
     done
