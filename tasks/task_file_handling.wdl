@@ -155,14 +155,16 @@ task transfer_files {
     Array[String] files_to_transfer
     Array[String] samplenames
     String target_bucket
+    String target_root_entity="transferred_files"
+    String transferred_file_column_header="transferred_file"
     Int CPUs = 4
     Int mem_size_gb = 8
     String? docker_image = "quay.io/theiagen/utility:1.1"
   }
   command <<<
-    file_path_array=~{sep=' ' files_to_transfer})
+    file_path_array=(~{sep=' ' files_to_transfer})
     samplename_array=(~{sep=' ' samplenames})
-    echo -e "entity:transferred_files_id\ttransferred_file" > transferred_files.tsv
+    echo -e "entity:~{target_root_entity}_id\t~{transferred_file_column_header}" > transferred_files.tsv
     
     #transfer files to target bucket
     gsutil -m cp -n "${file_path_array[@]}" ~{target_bucket}
