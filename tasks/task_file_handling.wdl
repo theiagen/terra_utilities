@@ -163,11 +163,13 @@ task transfer_files {
   }
   command <<<
     file_path_array=(~{sep=' ' files_to_transfer})
+    file_path_string_array="~{sep=' ' files_to_transfer}"
     samplename_array=(~{sep=' ' samplenames})
     echo -e "entity:~{target_root_entity}_id\t~{transferred_file_column_header}" > transferred_files.tsv
     
     #transfer files to target bucket
-    gsutil -m cp -n "${file_path_array[@]}" ~{target_bucket}
+    echo "Running gsutil -m cp -n ${file_path_string_array[@]} ~{target_bucket}"
+    gsutil -m cp -n ${file_path_string_array[@]} ~{target_bucket}
     
     #create datatable for transferred files
     for index in ${!file_path_array[@]}; do
