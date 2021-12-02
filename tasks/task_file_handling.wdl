@@ -155,7 +155,7 @@ task transfer_files {
     Array[String] files_to_transfer
     Array[String] samplenames
     String target_bucket
-    Boolean create_terra_table = false
+    Boolean create_terra_table = true
     String target_root_entity="transferred_files"
     String transferred_file_column_header="transferred_file"
     Int CPUs = 4
@@ -183,7 +183,7 @@ task transfer_files {
       fi
     else 
       #create header for transferred files output (non terra data table)
-      echo -e "transfer_files" > transferred_files.tsv
+      echo -e "~{transferred_file_column_header}" > transferred_files.tsv
     fi
         
     #transfer files to target bucket

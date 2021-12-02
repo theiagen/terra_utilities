@@ -8,8 +8,10 @@ workflow transfer_assembly_files {
     Array[String] assemblies
     Array[String] samplenames
     Array[Float] percent_reference_coverage
-    String target_root_entity
     String target_bucket
+    String target_root_entity
+    String transferred_file_column_header
+
   }
   call filter_assemblies{
     input:
@@ -19,16 +21,12 @@ workflow transfer_assembly_files {
   }
   call file_handling.transfer_files{
     input:
-      files_to_transfer=filter_assemblies.assemblies_filterred,
-      target_bucket=target_bucket
-    }
-  call create_assembly_data_table{
-    input:
-      filterred_assemblies=filter_assemblies.assemblies_filterred,
-      filterred_samplenames = filter_assemblies.samplenames_filterred,
+      files_to_transfer = filter_assemblies.assemblies_filterred,
+      samplenames = filter_assemblies.samplenames_filterred,
+      target_bucket = target_bucket,
       target_root_entity = target_root_entity,
-      target_bucket = target_bucket
-  }
+      transferred_file_column_header = transferred_file_column_header
+    }
   call versioning.version_capture{
     input:
   }
@@ -36,8 +34,7 @@ workflow transfer_assembly_files {
     String transfer_assembies_version = version_capture.terra_utilities_version
     String transfer_assemblies_analysis_date = version_capture.date
 
-    File bucket_files = transfer_files.bucket_files
-    File assembly_data_table = create_assembly_data_table.assembly_data_table
+    File assembly_data_table = transfer_files.transferred_files
   }
 }
 
@@ -123,44 +120,4 @@ task filter_assemblies {
       preemptible: 0
   }
 }
-task create_assembly_data_table {
-  input {
-    Array[String] filterred_assemblies
-    Array[String] filterred_samplenames
-    String target_root_entity
-    String target_bucket
-  }
-  command <<<
-    assembly_array=(~{sep=' ' filterred_assemblies})
-    assembly_array_len=$(echo "${#assembly_array[@]}")
-    samplename_array=(~{sep=' ' filterred_samplenames})
-    samplename_array_len=$(echo "${#samplename_array[@]}")
-    
-    # create assembly data table with header
-    echo -e "entity:~{target_root_entity}_id\tassembly_fasta" > assembly_data_table.tsv
 
-    for index in ${!samplename_array[@]}; do
-      samplename=${samplename_array[$index]}
-      assembly=${assembly_array[$index]}
-      gcp_address="~{target_bucket}${samplename}*.fasta" 
-      
-      echo "$samplename gcp_address = ${gcp_address}"
-      if [ $(gsutil -q stat ${gcp_address}; echo $?) == 1 ]; then
-        echo "${assembly} does not exist in ~{target_bucket}"
-        exit 1
-      else 
-        gcp_address=$(gsutil ls ${gcp_address})
-        echo -e "${samplename}\t${gcp_address}" >> assembly_data_table.tsv
-      fi
-    done
-  >>>
-  output {
-    File assembly_data_table = "assembly_data_table.tsv"
-  }
-  runtime {
-    memory: "1 GB"
-    cpu: 1
-    docker: "quay.io/theiagen/utility:1.1"
-    disks: "local-disk 10 HDD"
-  }
-}
