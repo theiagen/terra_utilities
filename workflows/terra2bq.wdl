@@ -12,7 +12,7 @@ workflow terra_table_to_csv {
     call download_entities_csv {
       input:
         outname=outname,
-        id_column=id_column
+        id_column=id_column,
         gcs_uri_prefix=gcs_uri
     }
 
