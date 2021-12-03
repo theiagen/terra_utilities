@@ -16,13 +16,6 @@ workflow terra_table_to_csv {
         gcs_uri_prefix=gcs_uri
     }
 
-    call gcs_copy {
-      input:
-      	date_string=date_string,
-        infile=download_entities_csv.csv_file,
-        infile_json=download_entities_csv.json_file,
-        gcs_uri_prefix=gcs_uri
-    }
 }
 
 task download_entities_csv {
@@ -32,6 +25,7 @@ task download_entities_csv {
     String  table_name
     String  id_column
     String  outname
+    String  gcs_uri_prefix
     String  docker = "schaluvadi/pathogen-genomic-surveillance:api-wdl"
     Int? mem_size_gb = 32
   }
@@ -39,11 +33,11 @@ task download_entities_csv {
   meta {
     volatile: true
   }
+  command <<<
 
   #Infinite While loop
   while true; do
 
-  command <<<
     python3<<CODE
     import csv
     import json
@@ -55,6 +49,7 @@ task download_entities_csv {
     workspace_name = '~{workspace_name}'
     table_name = '~{table_name}'
     out_fname = '~{outname}'+'.csv'
+    outfile_json = '~{outname}'+'.json'
 
     table = json.loads(fapi.get_entities(workspace_project, workspace_name, table_name).text)
     headers = collections.OrderedDict()
@@ -98,14 +93,14 @@ task download_entities_csv {
           outfile.write('"notes":""}'+'\n')
 
     CODE
+    ##removed datestring tag
+    set -e
+    gsutil -m cp '~{outname}'+'.json' ~{outname+"backup/"+"/"}
+    gsutil -m cp '~{outname}'+'.json' ~{gcs_uri_prefix}
+    ; done
   >>>
 
-  command <<<
-    set -e
-    gsutil -m cp ~{gcs_uri_prefix} ~{outname+"backup/"+date_string+"/"}
-    gsutil -m cp ~{outfile} ~{gcs_uri_prefix}
-  >>>
-  ; done
+
 
   runtime {
     docker: docker
@@ -118,6 +113,4 @@ task download_entities_csv {
     File csv_file = "~{outname}.csv"
     File json_file = "~{outname}.json"
   }
-}
-
 }
