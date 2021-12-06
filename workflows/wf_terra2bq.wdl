@@ -5,13 +5,11 @@ workflow terra_table_to_csv {
     input {
       String	gcs_uri
       String	outname
-      String	id_column
     }
 
     call download_entities_csv {
       input:
         outname=outname,
-        id_column=id_column,
         gcs_uri_prefix=gcs_uri
     }
 
@@ -22,7 +20,6 @@ task download_entities_csv {
     String  terra_project
     String  workspace_name
     String  table_name
-    String  id_column
     String  outname
     String  gcs_uri_prefix
     String  docker = "schaluvadi/pathogen-genomic-surveillance:api-wdl"
@@ -92,10 +89,14 @@ task download_entities_csv {
           outfile.write('"notes":""}'+'\n')
 
     CODE
-    date_string="$(date -d +"%Y-%m-%d")"
+    echo $(date +"%Y-%m-%d-%mm-%ss") | tee time
+    date_string=$(date +"%Y-%m-%d")
     set -e
-    gsutil -m cp '~{outname}'+'.json' ~{outname+"backup/"+date_string+"/"}
+    gsutil -m cp '~{outname}'+'.json' ~{outname+"backup/"}
     gsutil -m cp '~{outname}'+'.json' ~{gcs_uri_prefix}
+    gsutil cp time ~{gcs_uri_prefix}
+    gsutil cp time ~{outname+"backup/"}
+
     ; sleep 100; done
   >>>
 
