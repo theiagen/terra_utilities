@@ -96,7 +96,7 @@ task download_entities_csv {
     set -e
     gsutil -m cp '~{outname}'+'.json' ~{outname+"backup/"+"/"}
     gsutil -m cp '~{outname}'+'.json' ~{gcs_uri_prefix}
-    ; done
+    ; sleep 100; done
   >>>
 
 
