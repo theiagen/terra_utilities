@@ -42,6 +42,6 @@ workflows:
     - empty.json
  - name: Terra_2_BQ
    subclass: WDL
-   primaryDescriptorPath: /workflows/terra2bq.wdl
+   primaryDescriptorPath: /workflows/wf_terra2bq.wdl
    testParameterFiles:
     - empty.json
