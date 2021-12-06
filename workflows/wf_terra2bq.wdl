@@ -92,9 +92,9 @@ task download_entities_csv {
           outfile.write('"notes":""}'+'\n')
 
     CODE
-    ##removed datestring tag
+    date_string="$(date -d +"%Y-%m-%d")"
     set -e
-    gsutil -m cp '~{outname}'+'.json' ~{outname+"backup/"+"/"}
+    gsutil -m cp '~{outname}'+'.json' ~{outname+"backup/"+date_string+"/"}
     gsutil -m cp '~{outname}'+'.json' ~{gcs_uri_prefix}
     ; sleep 100; done
   >>>
