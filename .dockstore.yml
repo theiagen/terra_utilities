@@ -40,7 +40,7 @@ workflows:
    primaryDescriptorPath: /workflows/wf_transfer_column.wdl
    testParameterFiles:
     - empty.json
- - name: Terra_2_BQ2
+ - name: Terra_2_BQ
    subclass: WDL
    primaryDescriptorPath: /workflows/terra2bq.wdl
    testParameterFiles:
