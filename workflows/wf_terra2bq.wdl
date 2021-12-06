@@ -1,13 +1,13 @@
 version 1.0
 
-workflow terra_table_to_csv {
+workflow terra_2_bq {
 
     input {
       String	gcs_uri
       String	outname
     }
 
-    call download_entities_csv {
+    call terra_to_bigquery {
       input:
         outname=outname,
         gcs_uri_prefix=gcs_uri
@@ -15,7 +15,7 @@ workflow terra_table_to_csv {
 
 }
 
-task download_entities_csv {
+task terra_to_bigquery {
   input {
     String  terra_project
     String  workspace_name
@@ -32,21 +32,27 @@ task download_entities_csv {
   command <<<
 
   #Infinite While loop
+  set -e
+  count=0
   while true; do
 
     python3<<CODE
+    import datetime
     import csv
     import json
     import collections
 
     from firecloud import api as fapi
+    
+    date_time = now.strftime("%Y-%m-%d_%H:%M:%S")
 
     workspace_project = '~{terra_project}'
     workspace_name = '~{workspace_name}'
     table_name = '~{table_name}'
     out_fname = '~{outname}'+'.csv'
-    outfile_json = '~{outname}'+'.json'
+    outfile_json = '~{outname}'+date_time+'.json'
 
+    # Grab user-defined table with fapi and parse to data dictionary
     table = json.loads(fapi.get_entities(workspace_project, workspace_name, table_name).text)
     headers = collections.OrderedDict()
     rows = []
@@ -60,16 +66,18 @@ task download_entities_csv {
       outrow[table_name + "_id"] = row['name']
       rows.append(outrow)
 
+    # Write dictionary to csv out file
     with open(out_fname, 'wt') as outf:
       writer = csv.DictWriter(outf, headers.keys(), delimiter='\t', dialect=csv.unix_dialect, quoting=csv.QUOTE_MINIMAL)
       writer.writeheader()
       writer.writerows(rows)
 
+    # Parse csv out file to create newline JSON out 
     with open(out_fname, 'r') as infile:
       headers = infile.readline()
       headers_array = headers.strip().split('\t')
       headers_array[0] = "specimen_id"
-      with open('~{outname}'+'.json', 'w') as outfile:
+      with open('~{outname}'+date_time+'.json', 'w') as outfile:
         for line in infile:
           outfile.write('{')
           line_array=line.strip().split('\t')
@@ -89,15 +97,13 @@ task download_entities_csv {
           outfile.write('"notes":""}'+'\n')
 
     CODE
-    echo $(date +"%Y-%m-%d-%mm-%ss") | tee time
-    date_string=$(date +"%Y-%m-%d")
-    set -e
-    gsutil -m cp '~{outname}'+'.json' ~{outname+"backup/"}
-    gsutil -m cp '~{outname}'+'.json' ~{gcs_uri_prefix}
-    gsutil cp time ~{gcs_uri_prefix}
-    gsutil cp time ~{outname+"backup/"}
+    ((count++))
+    echo "count: $count"
+    echo "TIME IS NOW: $(date +"%Y-%m-%d-%mm-%ss")" 
+    
+    gsutil -m cp "~{outname}_*" ~{gcs_uri_prefix}
 
-    ; sleep 100; done
+    ; sleep 15; done
   >>>
 
 
@@ -110,7 +116,5 @@ task download_entities_csv {
   }
 
   output {
-    File csv_file = "~{outname}.csv"
-    File json_file = "~{outname}.json"
   }
 }
