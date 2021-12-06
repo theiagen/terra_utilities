@@ -5,7 +5,6 @@ workflow terra_table_to_csv {
     input {
       String	gcs_uri
       String	outname
-      String	date_string
       String	id_column
     }
 
