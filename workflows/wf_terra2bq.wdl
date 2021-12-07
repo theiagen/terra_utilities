@@ -63,7 +63,7 @@ task terra_to_bigquery {
     outrow[table_name + "_id"] = row['name']
     rows.append(outrow)
 
- # Writing tsv output from dictionary object
+  # Writing tsv output from dictionary object
   with open(out_fname, 'wt') as outf:
     writer = csv.DictWriter(outf, headers.keys(), delimiter='\t', dialect=csv.unix_dialect, quoting=csv.QUOTE_MINIMAL)
     writer.writeheader()
@@ -93,7 +93,6 @@ task terra_to_bigquery {
             outfile.write('"'+x+'"'+':'+'"'+y+'"'+',')
         outfile.write('"notes":""}'+'\n')      
   CODE
-  
     # counter and sanity checks for troubleshooting
     counter=$((counter+1))
     date=$(date +"%Y-%m-%d-%mm-%ss")
