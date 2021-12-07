@@ -99,7 +99,7 @@ task terra_to_bigquery {
     echo "count: $count"
     echo "TIME IS NOW: $(date +"%Y-%m-%d-%mm-%ss")" 
     
-    gsutil -m cp "~{outname}" ~{gcs_uri_prefix}
+    gsutil -m cp "~{outname}.json" ~{gcs_uri_prefix}
 
     sleep 15
   done
