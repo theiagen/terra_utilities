@@ -93,7 +93,7 @@ task terra_to_bigquery {
     counter=$((counter+1))
     date=$(date +"%Y-%m-%d-%mm-%ss")
     echo "count: $counter"
-    echo "TIME IS NOW: ${date_time}" 
+    echo "TIME IS NOW: ${date}" 
     echo "I'm out of the python block"
     # add date tag before pushing to bucket
     cp "~{outname}.json" "~{outname}_${date}.json"
