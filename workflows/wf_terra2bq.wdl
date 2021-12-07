@@ -120,6 +120,6 @@ task terra_to_bigquery {
 
   output {
     File csv_file = "~{outname}.csv"
-    File json_file = "~{outname}.json"
+    File json_file = "~{outname}*.json"
   }
 }
