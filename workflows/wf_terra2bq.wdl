@@ -23,7 +23,7 @@ task terra_to_bigquery {
     String  outname
     String  gcs_uri_prefix
     String  docker = "schaluvadi/pathogen-genomic-surveillance:api-wdl"
-    Int? mem_size_gb = 32
+    Int? mem_size_gb = 3
   }
 
   meta {
@@ -49,6 +49,7 @@ task terra_to_bigquery {
   table_name = '~{table_name}'
   out_fname = '~{outname}'+'.csv'
 
+  # Grabbbing defined table using firecloud api and reading data to to python dictionary
   table = json.loads(fapi.get_entities(workspace_project, workspace_name, table_name).text)
   headers = collections.OrderedDict()
   rows = []
@@ -62,11 +63,13 @@ task terra_to_bigquery {
     outrow[table_name + "_id"] = row['name']
     rows.append(outrow)
 
+ # Writing tsv output from dictionary object
   with open(out_fname, 'wt') as outf:
     writer = csv.DictWriter(outf, headers.keys(), delimiter='\t', dialect=csv.unix_dialect, quoting=csv.QUOTE_MINIMAL)
     writer.writeheader()
     writer.writerows(rows)
 
+  # Writing the newline json file from tsv output above
   with open(out_fname, 'r') as infile:
     headers = infile.readline()
     headers_array = headers.strip().split('\t')
@@ -90,16 +93,19 @@ task terra_to_bigquery {
             outfile.write('"'+x+'"'+':'+'"'+y+'"'+',')
         outfile.write('"notes":""}'+'\n')      
   CODE
+  
+    # counter and sanity checks for troubleshooting
     counter=$((counter+1))
     date=$(date +"%Y-%m-%d-%mm-%ss")
     echo "count: $counter"
     echo "TIME IS NOW: ${date}" 
     echo "I'm out of the python block"
+    
     # add date tag before pushing to bucket
     cp "~{outname}.json" "~{outname}_${date}.json"
     gsutil -m cp "~{outname}_${date}.json" ~{gcs_uri_prefix}
 
-    sleep 15
+    sleep 15m
   done
   echo "Loop exited"
   >>>
@@ -107,7 +113,7 @@ task terra_to_bigquery {
   runtime {
     docker: docker
     memory: "~{mem_size_gb} GB"
-    cpu: 4
+    cpu: 2
   }
 
   output {
