@@ -33,8 +33,8 @@ task terra_to_bigquery {
   set -e
   #Infinite While loop
   count=0
-
-  while true;
+  echo "enterring loop"
+  while true
   do
 
     python3 <<CODE
