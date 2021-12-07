@@ -36,68 +36,59 @@ task terra_to_bigquery {
   echo "enterring loop"
   while true
   do
+    python3<<CODE
+    import csv
+    import json
+    import collections
 
-    python3 <<CODE
-  from datetime import datetime
-  import csv
-  import json
-  import collections
+    from firecloud import api as fapi
 
-  from firecloud import api as fapi
-    
-  date_time = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
-  print(date_time)
+    workspace_project = '~{terra_project}'
+    workspace_name = '~{workspace_name}'
+    table_name = '~{table_name}'
+    out_fname = '~{outname}'+'.csv'
 
-  workspace_project = '~{terra_project}'
-  workspace_name = '~{workspace_name}'
-  table_name = '~{table_name}'
-  out_fname = '~{outname}'+'.csv'
-  outfile_json = '~{outname}'+date_time+'.json'
+    table = json.loads(fapi.get_entities(workspace_project, workspace_name, table_name).text)
+    headers = collections.OrderedDict()
+    rows = []
+    headers[table_name + "_id"] = 0
+    for row in table:
+      outrow = row['attributes']
+      for x in outrow.keys():
+        headers[x] = 0
+        if type(outrow[x]) == dict and set(outrow[x].keys()) == set(('itemsType', 'items')):
+          outrow[x] = outrow[x]['items']
+      outrow[table_name + "_id"] = row['name']
+      rows.append(outrow)
 
-  # Grab user-defined table with fapi and parse to data dictionary
-  table = json.loads(fapi.get_entities(workspace_project, workspace_name, table_name).text)
-  headers = collections.OrderedDict()
-  rows = []
-  headers[table_name + "_id"] = 0
-  for row in table:
-    outrow = row['attributes']
-    for x in outrow.keys():
-      headers[x] = 0
-      if type(outrow[x]) == dict and set(outrow[x].keys()) == set(('itemsType', 'items')):
-        outrow[x] = outrow[x]['items']
-    outrow[table_name + "_id"] = row['name']
-    rows.append(outrow)
+    with open(out_fname, 'wt') as outf:
+      writer = csv.DictWriter(outf, headers.keys(), delimiter='\t', dialect=csv.unix_dialect, quoting=csv.QUOTE_MINIMAL)
+      writer.writeheader()
+      writer.writerows(rows)
 
-  # Write dictionary to csv out file
-  with open(out_fname, 'wt') as outf:
-    writer = csv.DictWriter(outf, headers.keys(), delimiter='\t', dialect=csv.unix_dialect, quoting=csv.QUOTE_MINIMAL)
-    writer.writeheader()
-    writer.writerows(rows)
-
-  # Parse csv out file to create newline JSON out 
-  with open(out_fname, 'r') as infile:
-    headers = infile.readline()
-    headers_array = headers.strip().split('\t')
-    headers_array[0] = "specimen_id"
-    with open('~{outname}'+'.json', 'w') as outfile:
-      for line in infile:
-        outfile.write('{')
-        line_array=line.strip().split('\t')
-        for x,y in zip(headers_array, line_array):
-          if x == "nextclade_aa_dels" or x == "nextclade_aa_subs":
-            y = y.replace("|", ",")
-          if y == "NA":
-            y = ""
-          if y == "required_for_submission":
-            y = ""
-          if "Uneven pairs:" in y:
-            y = ""
-          if x == "County":
-            pass
-          else:
-            outfile.write('"'+x+'"'+':'+'"'+y+'"'+',')
-        outfile.write('"notes":""}'+'\n')
-
+    with open(out_fname, 'r') as infile:
+      headers = infile.readline()
+      headers_array = headers.strip().split('\t')
+      headers_array[0] = "specimen_id"
+      with open('~{outname}'+'.json', 'w') as outfile:
+        for line in infile:
+          outfile.write('{')
+          line_array=line.strip().split('\t')
+          for x,y in zip(headers_array, line_array):
+            if x == "nextclade_aa_dels" or x == "nextclade_aa_subs":
+              y = y.replace("|", ",")
+            if y == "NA":
+              y = ""
+            if y == "required_for_submission":
+              y = ""
+            if "Uneven pairs:" in y:
+              y = ""
+            if x == "County":
+              pass
+            else:  
+              outfile.write('"'+x+'"'+':'+'"'+y+'"'+',')
+          outfile.write('"notes":""}'+'\n')
+      
   CODE
     ((count++))
     echo "count: $count"
@@ -109,8 +100,6 @@ task terra_to_bigquery {
   done
   echo "Loop exited"
   >>>
-
-
 
   runtime {
     docker: docker
