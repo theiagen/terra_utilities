@@ -32,8 +32,12 @@ task terra_to_bigquery {
   command <<<
   set -e
   
-  cat << EOF > ./export_table.py 
-  #!/usr/bin/python3 
+  #Infinite While loop
+  counter=0
+  echo "enterring loop"
+  while true
+  do
+    python3<<CODE
   import csv
   import json
   import collections
@@ -84,22 +88,16 @@ task terra_to_bigquery {
             pass
           else:  
             outfile.write('"'+x+'"'+':'+'"'+y+'"'+',')
-        outfile.write('"notes":""}'+'\n')
-  EOF
-  
-  chmod 755 ./export_table.py 
-  
-  #Infinite While loop
-  count=0
-  echo "enterring loop"
-  while true
-  do
-    ./export_table.py 
-    ((count++))
-    echo "count: $count"
-    echo "TIME IS NOW: $(date +"%Y-%m-%d-%mm-%ss")" 
-    
-    gsutil -m cp "~{outname}.json" ~{gcs_uri_prefix}
+        outfile.write('"notes":""}'+'\n')      
+  CODE
+    counter=$((counter+1))
+    date=$(date +"%Y-%m-%d-%mm-%ss")
+    echo "count: $counter"
+    echo "TIME IS NOW: ${date_time}" 
+    echo "I'm out of the python block"
+    # add date tag before pushing to bucket
+    cp "~{outname}.json" "~{outname}_${date}.json"
+    gsutil -m cp "~{outname}_${date}.json" ~{gcs_uri_prefix}
 
     sleep 15
   done
