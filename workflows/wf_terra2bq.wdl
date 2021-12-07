@@ -107,6 +107,7 @@ task terra_to_bigquery {
 
     sleep 15
   done
+  echo "Loop exited"
   >>>
 
 
@@ -118,5 +119,7 @@ task terra_to_bigquery {
   }
 
   output {
+    File csv_file = "~{outname}.csv"
+    File json_file = "~{outname}.json"
   }
 }
