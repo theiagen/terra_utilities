@@ -79,7 +79,7 @@ task terra_to_bigquery {
     headers = infile.readline()
     headers_array = headers.strip().split('\t')
     headers_array[0] = "specimen_id"
-    with open('~{outname}'+date_time+'.json', 'w') as outfile:
+    with open('~{outname}'+'.json', 'w') as outfile:
       for line in infile:
         outfile.write('{')
         line_array=line.strip().split('\t')
@@ -103,7 +103,7 @@ task terra_to_bigquery {
     echo "count: $count"
     echo "TIME IS NOW: $(date +"%Y-%m-%d-%mm-%ss")" 
     
-    gsutil -m cp "~{outname}_*" ~{gcs_uri_prefix}
+    gsutil -m cp "~{outname}" ~{gcs_uri_prefix}
 
     sleep 15
   done
@@ -120,6 +120,6 @@ task terra_to_bigquery {
 
   output {
     File csv_file = "~{outname}.csv"
-    File json_file = "~{outname}*.json"
+    File json_file = "~{outname}.json"
   }
 }
