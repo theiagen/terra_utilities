@@ -31,12 +31,9 @@ task terra_to_bigquery {
   }
   command <<<
   set -e
-  #Infinite While loop
-  count=0
-  echo "enterring loop"
-  while true
-  do
-    python3<<CODE
+  
+  cat << EOF > ./export_table.py 
+  #!/usr/bin/python3 
   import csv
   import json
   import collections
@@ -88,7 +85,16 @@ task terra_to_bigquery {
           else:  
             outfile.write('"'+x+'"'+':'+'"'+y+'"'+',')
         outfile.write('"notes":""}'+'\n')
-  CODE
+  EOF
+  
+  chmod 755 ./export_table.py 
+  
+  #Infinite While loop
+  count=0
+  echo "enterring loop"
+  while true
+  do
+    ./export_table.py 
     ((count++))
     echo "count: $count"
     echo "TIME IS NOW: $(date +"%Y-%m-%d-%mm-%ss")" 
