@@ -48,8 +48,8 @@ task terra_to_bigquery {
   workspace_name_array_len=$(echo "${#workspace_name_array[@]}")
   table_name_array=(~{sep=' ' table_names})
   table_name_array_len=$(echo "${#table_name_array[@]}")
-  table_id=(~{sep=' ' table_ids})
-  table_id_len=$(echo "${#table_id[@]}")
+  table_id_array=(~{sep=' ' table_ids})
+  table_id__array_len=$(echo "${#table_id[@]}")
   
   # Ensure equal length of all input arrays
   echo "Terra Projects: $terra_project_array_len, Workspace name: $workspace_name_array_len, Table Names: $table_name_array_len, Table IDs: $table_id_array_len"
