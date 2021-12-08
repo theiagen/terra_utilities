@@ -83,13 +83,13 @@ task terra_to_bigquery {
 
   from firecloud import api as fapi
 
-  workspace_project = print(os.environ['terra_project'])
+  workspace_project = os.environ['terra_project']
   print("workspace project: "+ workspace_project)
-  workspace_name = print(os.environ['workspace_name'])
+  workspace_name = os.environ['workspace_name']
   print("workspace name: "+ workspace_name)
-  table_name = print(os.environ['table_name'])
+  table_name = os.environ['table_name']
   print("table name: "+ table_name)
-  out_fname = print(os.environ['table_id']) 
+  out_fname = os.environ['table_id']
   print("out_fname: " + out_fname)
   
   print("")
