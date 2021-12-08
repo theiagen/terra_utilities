@@ -74,6 +74,8 @@ task terra_to_bigquery {
     table_id=${table_id_array[$index]}
     
     export terra_project workspace_name table_name table_id
+    
+    echo -e "\nProcesing $table_id for export::"
   
     python3<<CODE
   import csv
