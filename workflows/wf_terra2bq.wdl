@@ -104,7 +104,7 @@ task terra_to_bigquery {
     echo "I'm out of the python block"
     
     # add date tag before pushing 
-    gsutil -m cp "~{outname}.json" ~{gcs_uri_prefix}/"~{outname}_${date_tag}.json"
+    gsutil -m cp "~{outname}.json" "~{gcs_uri_prefix}/~{outname}_${date_tag}.json"
 
     sleep ~{sleep_time}
   done
