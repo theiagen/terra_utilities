@@ -98,7 +98,7 @@ task terra_to_bigquery {
   CODE
     # counter and sanity checks for troubleshooting
     counter=$((counter+1))
-    date_tag=$(date +"%Y-%m-%d-%Hh-%mm-%Ss")
+    date_tag=$(date +"%Y-%m-%d-%Hh-%Mm-%Ss")
     echo "count: $counter"
     echo "TIME IS NOW: ${date_tag}" 
     echo "I'm out of the python block"
