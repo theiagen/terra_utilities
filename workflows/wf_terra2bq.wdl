@@ -26,6 +26,7 @@ task terra_to_bigquery {
     Int mem_size_gb = 32
     Int CPUs = 8
     Int disk_size = 100
+    String sleep_time = "15m"
   }
 
   meta {
@@ -105,7 +106,7 @@ task terra_to_bigquery {
     # add date tag before pushing 
     gsutil -m cp "~{outname}.json" ~{gcs_uri_prefix}/"~{outname}_${date_tag}.json"
 
-    sleep 15m
+    sleep ~{sleep_time}
   done
   echo "Loop exited"
   >>>
