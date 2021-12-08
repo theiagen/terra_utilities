@@ -72,9 +72,10 @@ task terra_to_bigquery {
     workspace_name=${workspace_name_array[$index]}
     table_name=${table_name_array[$index]}
     table_id=${table_id_array[$index]}
-
+    
+    export terra_project workspace_name table_name table_id
   
-      python3<<CODE
+    python3<<CODE
   import csv
   import json
   import collections
