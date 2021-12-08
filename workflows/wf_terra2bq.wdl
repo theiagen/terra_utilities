@@ -23,7 +23,9 @@ task terra_to_bigquery {
     String  outname
     String  gcs_uri_prefix
     String  docker = "schaluvadi/pathogen-genomic-surveillance:api-wdl"
-    Int? mem_size_gb = 3
+    Int mem_size_gb = 32
+    Int CPUs = 8
+    Int disk_size = 100
   }
 
   meta {
@@ -95,14 +97,13 @@ task terra_to_bigquery {
   CODE
     # counter and sanity checks for troubleshooting
     counter=$((counter+1))
-    date=$(date +"%Y-%m-%d-%mm-%ss")
+    date_tag=$(date +"%Y-%m-%d-%mm-%ss")
     echo "count: $counter"
-    echo "TIME IS NOW: ${date}" 
+    echo "TIME IS NOW: ${date_tag}" 
     echo "I'm out of the python block"
     
-    # add date tag before pushing to bucket
-    cp "~{outname}.json" "~{outname}_${date}.json"
-    gsutil -m cp "~{outname}_${date}.json" ~{gcs_uri_prefix}
+    # add date tag before pushing 
+    gsutil -m cp "~{outname}.json" ~{gcs_uri_prefix}/"~{outname}_${date_tag}.json"
 
     sleep 15m
   done
@@ -112,7 +113,8 @@ task terra_to_bigquery {
   runtime {
     docker: docker
     memory: "~{mem_size_gb} GB"
-    cpu: 2
+    cpu: CPUs
+    disks: "local-disk ~{disk_size} SSD"
   }
 
   output {
