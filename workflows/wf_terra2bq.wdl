@@ -66,18 +66,24 @@ task terra_to_bigquery {
   while true
   do
   
+    # counter and sanity checks for troubleshooting
+    counter=$((counter+1))
+    date_tag=$(date +"%Y-%m-%d-%Hh-%Mm-%Ss")
+    echo "count: $counter"
+    echo "TIME: ${date_tag}" 
+
   # Loop through inputs and run python script to create tsv/json and push json to gcp bucket
-  for index in  ${!terra_project_array[@]}; do
-    terra_project=${terra_project_array[$index]}
-    workspace_name=${workspace_name_array[$index]}
-    table_name=${table_name_array[$index]}
-    table_id=${table_id_array[$index]}
+    for index in  ${!terra_project_array[@]}; do
+      terra_project=${terra_project_array[$index]}
+      workspace_name=${workspace_name_array[$index]}
+      table_name=${table_name_array[$index]}
+      table_id=${table_id_array[$index]}
     
-    export terra_project workspace_name table_name table_id
+      export terra_project workspace_name table_name table_id
     
-    echo -e "\nProcesing $table_id for export::"
+      echo -e "\n::Procesing $table_id for export::"
   
-    python3<<CODE
+      python3<<CODE
   import csv
   import json
   import collections
@@ -138,17 +144,12 @@ task terra_to_bigquery {
             outfile.write('"'+x+'"'+':'+'"'+y+'"'+',')
         outfile.write('"notes":""}'+'\n')      
   CODE
-      # counter and sanity checks for troubleshooting
-      counter=$((counter+1))
-      date_tag=$(date +"%Y-%m-%d-%Hh-%Mm-%Ss")
-      echo "count: $counter"
-      echo "TIME IS NOW: ${date_tag}" 
-      echo "I'm out of the python block"
-    
-      # add date tag before pushing 
+  
+      # add date tag when transferring file to gcp 
       gsutil -m cp "${table_id}.json" "~{gcs_uri_prefix}${table_id}_${date_tag}.json"
       echo "${table_id}_${date_tag}.json copied to ~{gcs_uri_prefix}"
     done
+    
     sleep ~{sleep_time}
   done
   echo "Loop exited"
