@@ -3,13 +3,19 @@ version 1.0
 workflow terra_2_bq {
 
     input {
-      String	gcs_uri
-      String	outname
+      Array[String]  terra_projects
+      Array[String]  workspace_names
+      Array[String]  table_names
+      Array[String]  table_ids
+      String  gcs_uri
     }
 
     call terra_to_bigquery {
       input:
-        outname=outname,
+        terra_projects=terra_projects,
+        workspace_names=workspace_names,
+        table_names=table_names,
+        table_ids=table_ids,
         gcs_uri_prefix=gcs_uri
     }
 
@@ -17,10 +23,10 @@ workflow terra_2_bq {
 
 task terra_to_bigquery {
   input {
-    Array[String]  terra_project
-    Array[String]  workspace_name
-    Array[String]  table_name
-    Array[String]  table_id
+    Array[String]  terra_projects
+    Array[String]  workspace_names
+    Array[String]  table_names
+    Array[String]  table_ids
     String  gcs_uri_prefix
     String  docker = "schaluvadi/pathogen-genomic-surveillance:api-wdl"
     Int mem_size_gb = 32
@@ -36,22 +42,22 @@ task terra_to_bigquery {
   set -e
   
   # set bash arrays 
-  terra_project_array=(~{sep=' ' single_submission_fasta})
+  terra_project_array=(~{sep=' ' terra_projects})
   terra_project_array_len=$(echo "${#terra_project_array[@]}")
-  workspace_name_array=(~{sep=' ' single_submission_fasta})
+  workspace_name_array=(~{sep=' ' workspace_names})
   workspace_name_array_len=$(echo "${#workspace_name_array[@]}")
-  table_name_array=(~{sep=' ' single_submission_fasta})
+  table_name_array=(~{sep=' ' table_names})
   table_name_array_len=$(echo "${#table_name_array[@]}")
-  table_id=(~{sep=' ' single_submission_fasta})
+  table_id=(~{sep=' ' table_ids})
   table_id_len=$(echo "${#table_id[@]}")
   
   # Ensure equal length of all input arrays
   echo "Terra Projects: $terra_project_array_len, Workspace name: $workspace_name_array_len, Table Names: $table_name_array_len, Table IDs: $table_id_array_len"
   if [ "$terra_project_array_len" -ne "$workspace_name_array_len" ] || [ "$terra_project_array_len" -ne "$table_name_array_len" ] || [ "$terra_project_array_len" -ne "$table_id_array_len" ]; then
-    echo "Input arrays are of unequal length. Samples: $samplename_array_len, Assemblies: $assembly_array_len, percent_reference_coverages: $referece_coverage_array_len" >&2
+    echo "Input arrays are of unequal length. Terra Projects: $terra_project_array_len, Workspace name: $workspace_name_array_len, Table Names: $table_name_array_len, Table IDs: $table_id_array_len" >&2
     exit 1
   else 
-    echo "Input arrays are of equal length. Samples: $samplename_array_len, Assemblies: $assembly_array_len, percent_reference_coverages: $referece_coverage_array_len"
+    echo "Input arrays are of equal length. Terra Projects: $terra_project_array_len, Workspace name: $workspace_name_array_len, Table Names: $table_name_array_len, Table IDs: $table_id_array_len"
   fi
   
   #Infinite While loop
@@ -82,7 +88,7 @@ task terra_to_bigquery {
   print("workspace name: "+ workspace_name)
   table_name = print(os.environ['table_name'])
   print("table name: "+ table_name)
-  out_fname = print(os.environ['table_id']) + '.csv'
+  out_fname = print(os.environ['table_id']) 
   print("out_fname: " + out_fname)
   
   print("")
@@ -102,7 +108,7 @@ task terra_to_bigquery {
     rows.append(outrow)
 
   # Writing tsv output from dictionary object
-  with open(out_fname, 'wt') as outf:
+  with open(out_fname+'.tsv', 'wt') as outf:
     writer = csv.DictWriter(outf, headers.keys(), delimiter='\t', dialect=csv.unix_dialect, quoting=csv.QUOTE_MINIMAL)
     writer.writeheader()
     writer.writerows(rows)
@@ -112,7 +118,7 @@ task terra_to_bigquery {
     headers = infile.readline()
     headers_array = headers.strip().split('\t')
     headers_array[0] = "specimen_id"
-    with open('~{outname}'+'.json', 'w') as outfile:
+    with open(out_fname+'.json', 'w') as outfile:
       for line in infile:
         outfile.write('{')
         line_array=line.strip().split('\t')
@@ -155,7 +161,5 @@ task terra_to_bigquery {
   }
 
   output {
-    File csv_file = "~{outname}.csv"
-    File json_file = "~{outname}.json"
   }
 }
