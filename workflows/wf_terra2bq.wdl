@@ -90,9 +90,7 @@ task terra_to_bigquery {
   table_name = os.environ['table_name']
   print("table name: "+ table_name)
   out_fname = os.environ['table_id']
-  print("out_fname: " + out_fname)
-  
-  print("")
+  print("out_fname: " + out_fname) 
 
   # Grabbbing defined table using firecloud api and reading data to to python dictionary
   table = json.loads(fapi.get_entities(workspace_project, workspace_name, table_name).text)
@@ -109,13 +107,13 @@ task terra_to_bigquery {
     rows.append(outrow)
 
   # Writing tsv output from dictionary object
-  with open(out_fname+'.tsv', 'wt') as outf:
+  with open(out_fname+'.tsv', 'w') as outf:
     writer = csv.DictWriter(outf, headers.keys(), delimiter='\t', dialect=csv.unix_dialect, quoting=csv.QUOTE_MINIMAL)
     writer.writeheader()
     writer.writerows(rows)
 
   # Writing the newline json file from tsv output above
-  with open(out_fname, 'r') as infile:
+  with open(out_fname+'.tsv', 'r') as infile:
     headers = infile.readline()
     headers_array = headers.strip().split('\t')
     headers_array[0] = "specimen_id"
