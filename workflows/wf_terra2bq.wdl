@@ -17,10 +17,10 @@ workflow terra_2_bq {
 
 task terra_to_bigquery {
   input {
-    String  terra_project
-    String  workspace_name
-    String  table_name
-    String  outname
+    Array[String]  terra_project
+    Array[String]  workspace_name
+    Array[String]  table_name
+    Array[String]  table_id
     String  gcs_uri_prefix
     String  docker = "schaluvadi/pathogen-genomic-surveillance:api-wdl"
     Int mem_size_gb = 32
@@ -35,22 +35,57 @@ task terra_to_bigquery {
   command <<<
   set -e
   
+  # set bash arrays 
+  terra_project_array=(~{sep=' ' single_submission_fasta})
+  terra_project_array_len=$(echo "${#terra_project_array[@]}")
+  workspace_name_array=(~{sep=' ' single_submission_fasta})
+  workspace_name_array_len=$(echo "${#workspace_name_array[@]}")
+  table_name_array=(~{sep=' ' single_submission_fasta})
+  table_name_array_len=$(echo "${#table_name_array[@]}")
+  table_id=(~{sep=' ' single_submission_fasta})
+  table_id_len=$(echo "${#table_id[@]}")
+  
+  # Ensure equal length of all input arrays
+  echo "Terra Projects: $terra_project_array_len, Workspace name: $workspace_name_array_len, Table Names: $table_name_array_len, Table IDs: $table_id_array_len"
+  if [ "$terra_project_array_len" -ne "$workspace_name_array_len" ] || [ "$terra_project_array_len" -ne "$table_name_array_len" ] || [ "$terra_project_array_len" -ne "$table_id_array_len" ]; then
+    echo "Input arrays are of unequal length. Samples: $samplename_array_len, Assemblies: $assembly_array_len, percent_reference_coverages: $referece_coverage_array_len" >&2
+    exit 1
+  else 
+    echo "Input arrays are of equal length. Samples: $samplename_array_len, Assemblies: $assembly_array_len, percent_reference_coverages: $referece_coverage_array_len"
+  fi
+  
   #Infinite While loop
   counter=0
   echo "enterring loop"
   while true
   do
-    python3<<CODE
+  
+  # Loop through inputs and run python script to create tsv/json and push json to gcp bucket
+  for index in  ${!terra_project_array[@]}; do
+    terra_project=${terra_project_array[$index]}
+    workspace_name=${workspace_name_array[$index]}
+    table_name=${table_name_array[$index]}
+    table_id=${table_id_array[$index]}
+
+  
+      python3<<CODE
   import csv
   import json
   import collections
+  import os
 
   from firecloud import api as fapi
 
-  workspace_project = '~{terra_project}'
-  workspace_name = '~{workspace_name}'
-  table_name = '~{table_name}'
-  out_fname = '~{outname}'+'.csv'
+  workspace_project = print(os.environ['terra_project'])
+  print("workspace project: "+ workspace_project)
+  workspace_name = print(os.environ['workspace_name'])
+  print("workspace name: "+ workspace_name)
+  table_name = print(os.environ['table_name'])
+  print("table name: "+ table_name)
+  out_fname = print(os.environ['table_id']) + '.csv'
+  print("out_fname: " + out_fname)
+  
+  print("")
 
   # Grabbbing defined table using firecloud api and reading data to to python dictionary
   table = json.loads(fapi.get_entities(workspace_project, workspace_name, table_name).text)
@@ -96,17 +131,17 @@ task terra_to_bigquery {
             outfile.write('"'+x+'"'+':'+'"'+y+'"'+',')
         outfile.write('"notes":""}'+'\n')      
   CODE
-    # counter and sanity checks for troubleshooting
-    counter=$((counter+1))
-    date_tag=$(date +"%Y-%m-%d-%Hh-%Mm-%Ss")
-    echo "count: $counter"
-    echo "TIME IS NOW: ${date_tag}" 
-    echo "I'm out of the python block"
+      # counter and sanity checks for troubleshooting
+      counter=$((counter+1))
+      date_tag=$(date +"%Y-%m-%d-%Hh-%Mm-%Ss")
+      echo "count: $counter"
+      echo "TIME IS NOW: ${date_tag}" 
+      echo "I'm out of the python block"
     
-    # add date tag before pushing 
-    gsutil -m cp "~{outname}.json" "~{gcs_uri_prefix}~{outname}_${date_tag}.json"
-    echo "~{outname}_${date_tag}.json copied to ~{gcs_uri_prefix}"
-
+      # add date tag before pushing 
+      gsutil -m cp "${table_id}.json" "~{gcs_uri_prefix}${table_id}_${date_tag}.json"
+      echo "${table_id}_${date_tag}.json copied to ~{gcs_uri_prefix}"
+    done
     sleep ~{sleep_time}
   done
   echo "Loop exited"
