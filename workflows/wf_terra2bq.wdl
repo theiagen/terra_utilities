@@ -105,6 +105,7 @@ task terra_to_bigquery {
     
     # add date tag before pushing 
     gsutil -m cp "~{outname}.json" "~{gcs_uri_prefix}/~{outname}_${date_tag}.json"
+    echo "~{outname}_${date_tag}.json copied to ~{gcs_uri_prefix}"
 
     sleep ~{sleep_time}
   done
