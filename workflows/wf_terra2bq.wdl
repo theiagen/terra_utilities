@@ -40,8 +40,13 @@ task terra_to_bigquery {
   }
   command <<<
   set -e
+<<<<<<< HEAD
 
   # set bash arrays
+=======
+  
+  # set bash arrays 
+>>>>>>> f7711f1784eb1bd7adb6b0f5f0eb74abd87d7382
   terra_project_array=(~{sep=' ' terra_projects})
   terra_project_array_len=$(echo "${#terra_project_array[@]}")
   workspace_name_array=(~{sep=' ' workspace_names})
@@ -50,27 +55,46 @@ task terra_to_bigquery {
   table_name_array_len=$(echo "${#table_name_array[@]}")
   table_id_array=(~{sep=' ' table_ids})
   table_id__array_len=$(echo "${#table_id_array[@]}")
+<<<<<<< HEAD
 
+=======
+  
+>>>>>>> f7711f1784eb1bd7adb6b0f5f0eb74abd87d7382
   # Ensure equal length of all input arrays
   echo "Terra Projects: $terra_project_array_len, Workspace name: $workspace_name_array_len, Table Names: $table_name_array_len, Table IDs: $table_id_array_len"
   if [ "$terra_project_array_len" -ne "$workspace_name_array_len" ] && [ "$terra_project_array_len" -ne "$table_name_array_len" ] && [ "$terra_project_array_len" -ne "$table_id_array_len" ]; then
     echo "Input arrays are of unequal length. Terra Projects: $terra_project_array_len, Workspace name: $workspace_name_array_len, Table Names: $table_name_array_len, Table IDs: $table_id_array_len" >&2
     exit 1
+<<<<<<< HEAD
   else
     echo -e "Input arrays are of equal length. \nProceeding to transfer the following Terra Data Tables to ~{gcs_uri_prefix}:\n${table_id_array[@]} \n\nTransfer will occur every ~{sleep_time} until this job is aborted.\n"
   fi
 
+=======
+  else 
+    echo -e "Input arrays are of equal length. \nProceeding to transfer the following Terra Data Tables to ~{gcs_uri_prefix}:\n${table_id_array[@]} \n\nTransfer will occur every ~{sleep_time} until this job is aborted.\n"
+  fi
+  
+>>>>>>> f7711f1784eb1bd7adb6b0f5f0eb74abd87d7382
   #Infinite While loop
   counter=0
   echo -e "**ENTERRING LOOP**"
   while true
   do
+<<<<<<< HEAD
 
+=======
+  
+>>>>>>> f7711f1784eb1bd7adb6b0f5f0eb74abd87d7382
     # counter and sanity checks for troubleshooting
     counter=$((counter+1))
     date_tag=$(date +"%Y-%m-%d-%Hh-%Mm-%Ss")
     echo -e "\n========== Iteration number ${counter} of continuous loop =========="
+<<<<<<< HEAD
     echo "TIME: ${date_tag}"
+=======
+    echo "TIME: ${date_tag}" 
+>>>>>>> f7711f1784eb1bd7adb6b0f5f0eb74abd87d7382
 
   # Loop through inputs and run python script to create tsv/json and push json to gcp bucket
     for index in  ${!terra_project_array[@]}; do
@@ -78,11 +102,19 @@ task terra_to_bigquery {
       workspace_name=${workspace_name_array[$index]}
       table_name=${table_name_array[$index]}
       table_id=${table_id_array[$index]}
+<<<<<<< HEAD
 
       export terra_project workspace_name table_name table_id
 
       echo -e "\n::Procesing $table_id for export::"
 
+=======
+    
+      export terra_project workspace_name table_name table_id
+    
+      echo -e "\n::Procesing $table_id for export::"
+  
+>>>>>>> f7711f1784eb1bd7adb6b0f5f0eb74abd87d7382
       python3<<CODE
   import csv
   import json
@@ -98,7 +130,11 @@ task terra_to_bigquery {
   table_name = os.environ['table_name']
   print("table name: "+ table_name)
   out_fname = os.environ['table_id']
+<<<<<<< HEAD
   print("out_fname: " + out_fname)
+=======
+  print("out_fname: " + out_fname) 
+>>>>>>> f7711f1784eb1bd7adb6b0f5f0eb74abd87d7382
 
   # Grabbbing defined table using firecloud api and reading data to to python dictionary
   table = json.loads(fapi.get_entities(workspace_project, workspace_name, table_name).text)
@@ -144,12 +180,21 @@ task terra_to_bigquery {
             outfile.write('"'+x+'"'+':'+'"'+y+'"'+',')
         outfile.write('"notes":""}'+'\n')
   CODE
+<<<<<<< HEAD
 
       # add date tag when transferring file to gcp
       gsutil -m cp "${table_id}.json" "~{gcs_uri_prefix}${table_id}_${date_tag}.json"
       echo "${table_id}_${date_tag}.json copied to ~{gcs_uri_prefix}"
     done
 
+=======
+  
+      # add date tag when transferring file to gcp 
+      gsutil -m cp "${table_id}.json" "~{gcs_uri_prefix}${table_id}_${date_tag}.json"
+      echo "${table_id}_${date_tag}.json copied to ~{gcs_uri_prefix}"
+    done
+    
+>>>>>>> f7711f1784eb1bd7adb6b0f5f0eb74abd87d7382
     sleep ~{sleep_time}
   done
   echo "Loop exited"
