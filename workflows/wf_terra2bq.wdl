@@ -3,13 +3,19 @@ version 1.0
 workflow terra_2_bq {
 
     input {
-      String	gcs_uri
-      String	outname
+      Array[String]  terra_projects
+      Array[String]  workspace_names
+      Array[String]  table_names
+      Array[String]  table_ids
+      String  gcs_uri
     }
 
     call terra_to_bigquery {
       input:
-        outname=outname,
+        terra_projects=terra_projects,
+        workspace_names=workspace_names,
+        table_names=table_names,
+        table_ids=table_ids,
         gcs_uri_prefix=gcs_uri
     }
 
@@ -17,13 +23,16 @@ workflow terra_2_bq {
 
 task terra_to_bigquery {
   input {
-    String  terra_project
-    String  workspace_name
-    String  table_name
-    String  outname
+    Array[String]  terra_projects
+    Array[String]  workspace_names
+    Array[String]  table_names
+    Array[String]  table_ids
     String  gcs_uri_prefix
     String  docker = "schaluvadi/pathogen-genomic-surveillance:api-wdl"
-    Int? mem_size_gb = 3
+    Int mem_size_gb = 32
+    Int CPUs = 8
+    Int disk_size = 100
+    String sleep_time = "15m"
   }
 
   meta {
@@ -31,23 +40,65 @@ task terra_to_bigquery {
   }
   command <<<
   set -e
-  
+
+  # set bash arrays
+  terra_project_array=(~{sep=' ' terra_projects})
+  terra_project_array_len=$(echo "${#terra_project_array[@]}")
+  workspace_name_array=(~{sep=' ' workspace_names})
+  workspace_name_array_len=$(echo "${#workspace_name_array[@]}")
+  table_name_array=(~{sep=' ' table_names})
+  table_name_array_len=$(echo "${#table_name_array[@]}")
+  table_id_array=(~{sep=' ' table_ids})
+  table_id__array_len=$(echo "${#table_id_array[@]}")
+
+  # Ensure equal length of all input arrays
+  echo "Terra Projects: $terra_project_array_len, Workspace name: $workspace_name_array_len, Table Names: $table_name_array_len, Table IDs: $table_id_array_len"
+  if [ "$terra_project_array_len" -ne "$workspace_name_array_len" ] && [ "$terra_project_array_len" -ne "$table_name_array_len" ] && [ "$terra_project_array_len" -ne "$table_id_array_len" ]; then
+    echo "Input arrays are of unequal length. Terra Projects: $terra_project_array_len, Workspace name: $workspace_name_array_len, Table Names: $table_name_array_len, Table IDs: $table_id_array_len" >&2
+    exit 1
+  else
+    echo -e "Input arrays are of equal length. \nProceeding to transfer the following Terra Data Tables to ~{gcs_uri_prefix}:\n${table_id_array[@]} \n\nTransfer will occur every ~{sleep_time} until this job is aborted.\n"
+  fi
+
   #Infinite While loop
   counter=0
-  echo "enterring loop"
+  echo -e "**ENTERRING LOOP**"
   while true
   do
-    python3<<CODE
+
+    # counter and sanity checks for troubleshooting
+    counter=$((counter+1))
+    date_tag=$(date +"%Y-%m-%d-%Hh-%Mm-%Ss")
+    echo -e "\n========== Iteration number ${counter} of continuous loop =========="
+    echo "TIME: ${date_tag}"
+
+  # Loop through inputs and run python script to create tsv/json and push json to gcp bucket
+    for index in  ${!terra_project_array[@]}; do
+      terra_project=${terra_project_array[$index]}
+      workspace_name=${workspace_name_array[$index]}
+      table_name=${table_name_array[$index]}
+      table_id=${table_id_array[$index]}
+
+      export terra_project workspace_name table_name table_id
+
+      echo -e "\n::Procesing $table_id for export::"
+
+      python3<<CODE
   import csv
   import json
   import collections
+  import os
 
   from firecloud import api as fapi
 
-  workspace_project = '~{terra_project}'
-  workspace_name = '~{workspace_name}'
-  table_name = '~{table_name}'
-  out_fname = '~{outname}'+'.csv'
+  workspace_project = os.environ['terra_project']
+  print("workspace project: "+ workspace_project)
+  workspace_name = os.environ['workspace_name']
+  print("workspace name: "+ workspace_name)
+  table_name = os.environ['table_name']
+  print("table name: "+ table_name)
+  out_fname = os.environ['table_id']
+  print("out_fname: " + out_fname)
 
   # Grabbbing defined table using firecloud api and reading data to to python dictionary
   table = json.loads(fapi.get_entities(workspace_project, workspace_name, table_name).text)
@@ -64,17 +115,17 @@ task terra_to_bigquery {
     rows.append(outrow)
 
   # Writing tsv output from dictionary object
-  with open(out_fname, 'wt') as outf:
+  with open(out_fname+'.tsv', 'w') as outf:
     writer = csv.DictWriter(outf, headers.keys(), delimiter='\t', dialect=csv.unix_dialect, quoting=csv.QUOTE_MINIMAL)
     writer.writeheader()
     writer.writerows(rows)
 
   # Writing the newline json file from tsv output above
-  with open(out_fname, 'r') as infile:
+  with open(out_fname+'.tsv', 'r') as infile:
     headers = infile.readline()
     headers_array = headers.strip().split('\t')
     headers_array[0] = "specimen_id"
-    with open('~{outname}'+'.json', 'w') as outfile:
+    with open(out_fname+'.json', 'w') as outfile:
       for line in infile:
         outfile.write('{')
         line_array=line.strip().split('\t')
@@ -89,22 +140,17 @@ task terra_to_bigquery {
             y = ""
           if x == "County":
             pass
-          else:  
+          else:
             outfile.write('"'+x+'"'+':'+'"'+y+'"'+',')
-        outfile.write('"notes":""}'+'\n')      
+        outfile.write('"notes":""}'+'\n')
   CODE
-    # counter and sanity checks for troubleshooting
-    counter=$((counter+1))
-    date=$(date +"%Y-%m-%d-%mm-%ss")
-    echo "count: $counter"
-    echo "TIME IS NOW: ${date}" 
-    echo "I'm out of the python block"
-    
-    # add date tag before pushing to bucket
-    cp "~{outname}.json" "~{outname}_${date}.json"
-    gsutil -m cp "~{outname}_${date}.json" ~{gcs_uri_prefix}
 
-    sleep 15m
+      # add date tag when transferring file to gcp
+      gsutil -m cp "${table_id}.json" "~{gcs_uri_prefix}${table_id}_${date_tag}.json"
+      echo "${table_id}_${date_tag}.json copied to ~{gcs_uri_prefix}"
+    done
+
+    sleep ~{sleep_time}
   done
   echo "Loop exited"
   >>>
@@ -112,11 +158,10 @@ task terra_to_bigquery {
   runtime {
     docker: docker
     memory: "~{mem_size_gb} GB"
-    cpu: 2
+    cpu: CPUs
+    disks: "local-disk ~{disk_size} SSD"
   }
 
   output {
-    File csv_file = "~{outname}.csv"
-    File json_file = "~{outname}.json"
   }
 }
