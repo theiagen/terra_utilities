@@ -57,19 +57,19 @@ task terra_to_bigquery {
     echo "Input arrays are of unequal length. Terra Projects: $terra_project_array_len, Workspace name: $workspace_name_array_len, Table Names: $table_name_array_len, Table IDs: $table_id_array_len" >&2
     exit 1
   else 
-    echo "Input arrays are of equal length. Terra Projects: $terra_project_array_len, Workspace name: $workspace_name_array_len, Table Names: $table_name_array_len, Table IDs: $table_id_array_len"
+    echo -e "Input arrays are of equal length. Proceeding with workflow to transfer the following Terra Data Tables to ~{gcs_uri_prefix}: ${table_id_array[@]}. \n Transfer will occur every ~{sleep_time} until this job is aborted.\n"
   fi
   
   #Infinite While loop
   counter=0
-  echo "enterring loop"
+  echo -e "\n**ENTERRING LOOP\n**"
   while true
   do
   
     # counter and sanity checks for troubleshooting
     counter=$((counter+1))
     date_tag=$(date +"%Y-%m-%d-%Hh-%Mm-%Ss")
-    echo "count: $counter"
+    echo -e "\ncount: $counter"
     echo "TIME: ${date_tag}" 
 
   # Loop through inputs and run python script to create tsv/json and push json to gcp bucket
@@ -81,7 +81,7 @@ task terra_to_bigquery {
     
       export terra_project workspace_name table_name table_id
     
-      echo -e "\n::Procesing $table_id for export::"
+      echo -e "\n::::Procesing $table_id for export::::"
   
       python3<<CODE
   import csv
