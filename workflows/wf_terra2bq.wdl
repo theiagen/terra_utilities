@@ -69,7 +69,7 @@ task terra_to_bigquery {
     # counter and sanity checks for troubleshooting
     counter=$((counter+1))
     date_tag=$(date +"%Y-%m-%d-%Hh-%Mm-%Ss")
-    echo -e "\nInteration number $counter of continuous while loop (${date_tag})"
+    echo -e "\nInteration number ${counter} of continuous while loop (${date_tag})"
     echo "TIME: ${date_tag}" 
 
   # Loop through inputs and run python script to create tsv/json and push json to gcp bucket
