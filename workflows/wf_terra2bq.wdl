@@ -57,12 +57,12 @@ task terra_to_bigquery {
     echo "Input arrays are of unequal length. Terra Projects: $terra_project_array_len, Workspace name: $workspace_name_array_len, Table Names: $table_name_array_len, Table IDs: $table_id_array_len" >&2
     exit 1
   else 
-    echo -e "Input arrays are of equal length. Proceeding with workflow to transfer the following Terra Data Tables to ~{gcs_uri_prefix}: ${table_id_array[@]}. \n Transfer will occur every ~{sleep_time} until this job is aborted.\n"
+    echo -e "Input arrays are of equal length. Proceeding with workflow to transfer the following Terra Data Tables to ~{gcs_uri_prefix}:\n \t ${table_id_array[@]} \nTransfer will occur every ~{sleep_time} until this job is aborted.\n"
   fi
   
   #Infinite While loop
   counter=0
-  echo -e "\n**ENTERRING LOOP\n**"
+  echo -e "\n**ENTERRING LOOP**\n"
   while true
   do
   
