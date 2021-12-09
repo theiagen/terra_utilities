@@ -134,6 +134,14 @@ task terra_to_bigquery {
             y = y.replace("|", ",")
           if y == "NA":
             y = ""
+          if y == "N/A":
+            y = ""
+          if y == "Unknown":
+            y = ""
+          if y == "unknown":
+            y = ""
+          if y == "UNKNOWN":
+            y = ""
           if y == "required_for_submission":
             y = ""
           if "Uneven pairs:" in y:
