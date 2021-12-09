@@ -63,7 +63,7 @@ task filter_assemblies {
 
     #Ensure assembly, meta, and vadr arrays are of equal length
     echo "Samples: $samplename_array_len, Assemblies: $assembly_array_len, percent_reference_coverages: $referece_coverage_array_len"
-    if [ "$samplename_array_len" -ne "$referece_coverage_array_len" ] || [ "$samplename_array_len" -ne "$assembly_array_len" ]; then
+    if [ "$samplename_array_len" -ne "$referece_coverage_array_len" ] && [ "$samplename_array_len" -ne "$assembly_array_len" ]; then
       echo "Input arrays are of unequal length. Samples: $samplename_array_len, Assemblies: $assembly_array_len, percent_reference_coverages: $referece_coverage_array_len" >&2
       exit 1
     else 
