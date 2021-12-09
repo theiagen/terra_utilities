@@ -49,15 +49,15 @@ task terra_to_bigquery {
   table_name_array=(~{sep=' ' table_names})
   table_name_array_len=$(echo "${#table_name_array[@]}")
   table_id_array=(~{sep=' ' table_ids})
-  table_id__array_len=$(echo "${#table_id[@]}")
+  table_id__array_len=$(echo "${#table_id_array[@]}")
   
   # Ensure equal length of all input arrays
   echo "Terra Projects: $terra_project_array_len, Workspace name: $workspace_name_array_len, Table Names: $table_name_array_len, Table IDs: $table_id_array_len"
-  if [ "$terra_project_array_len" -ne "$workspace_name_array_len" ] || [ "$terra_project_array_len" -ne "$table_name_array_len" ] || [ "$terra_project_array_len" -ne "$table_id_array_len" ]; then
+  if [ "$terra_project_array_len" -ne "$workspace_name_array_len" ] && [ "$terra_project_array_len" -ne "$table_name_array_len" ] && [ "$terra_project_array_len" -ne "$table_id_array_len" ]; then
     echo "Input arrays are of unequal length. Terra Projects: $terra_project_array_len, Workspace name: $workspace_name_array_len, Table Names: $table_name_array_len, Table IDs: $table_id_array_len" >&2
     exit 1
   else 
-    echo -e "Input arrays are of equal length. \nProceeding with workflow to transfer the following Terra Data Tables to ~{gcs_uri_prefix}:\n-- ${table_id_array[@]} \nTransfer will occur every ~{sleep_time} until this job is aborted.\n"
+    echo -e "Input arrays are of equal length. \nProceeding to transfer the following Terra Data Tables to ~{gcs_uri_prefix}:\n${table_id_array[@]} \n\nTransfer will occur every ~{sleep_time} until this job is aborted.\n"
   fi
   
   #Infinite While loop
@@ -69,7 +69,7 @@ task terra_to_bigquery {
     # counter and sanity checks for troubleshooting
     counter=$((counter+1))
     date_tag=$(date +"%Y-%m-%d-%Hh-%Mm-%Ss")
-    echo -e "\nIteration number ${counter} of continuous loop."
+    echo -e "\n========== Iteration number ${counter} of continuous loop =========="
     echo "TIME: ${date_tag}" 
 
   # Loop through inputs and run python script to create tsv/json and push json to gcp bucket
@@ -81,7 +81,7 @@ task terra_to_bigquery {
     
       export terra_project workspace_name table_name table_id
     
-      echo -e "\n::::Procesing $table_id for export::::"
+      echo -e "\n::Procesing $table_id for export::"
   
       python3<<CODE
   import csv
