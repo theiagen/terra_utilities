@@ -122,7 +122,7 @@ task terra_to_bigquery {
     writer.writerows(rows)
 
   # Add column to capture source terra table (table_id) 
-  with open('out_fname+'_temp.tsv','r') as csvinput:
+  with open(out_fname+'_temp.tsv','r') as csvinput:
     with open(out_fname+'.tsv', 'w') as csvoutput:
         writer = csv.writer(csvoutput, delimiter='\t')
         reader = csv.reader(csvinput, delimiter='\t')
