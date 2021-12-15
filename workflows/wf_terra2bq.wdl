@@ -130,7 +130,7 @@ task terra_to_bigquery {
         all = []
         tsv_row = next(reader)
         tsv_row.append("source_terra_table")
-        all.append(row)
+        all.append(tsv_row)
 
         for tsv_row in reader:
             tsv_row.append(out_fname)
