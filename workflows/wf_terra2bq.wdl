@@ -128,13 +128,13 @@ task terra_to_bigquery {
         reader = csv.reader(csvinput, delimiter='\t')
 
         all = []
-        row = next(reader)
-        row.append("source_terra_table")
+        tsv_row = next(reader)
+        tsv_row.append("source_terra_table")
         all.append(row)
 
-        for row in reader:
-            row.append(out_fname)
-            all.append(row)
+        for tsv_row in reader:
+            tsv_row.append(out_fname)
+            all.append(tsv_row)
 
         writer.writerows(all)
 
