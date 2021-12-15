@@ -173,8 +173,6 @@ task terra_to_bigquery {
 
       # add date tag when transferring file to gcp
       date_tag=$(date +"%Y-%m-%d-%Hh-%Mm-%Ss")
-      gsutil -m cp ${table_id}_temp.tsv "~{gcs_uri_prefix}tsv_check/"
-      gsutil -m cp ${table_id}.tsv "~{gcs_uri_prefix}tsv_check/"
       gsutil -m cp "${table_id}.json" "~{gcs_uri_prefix}${table_id}_${date_tag}.json"
       echo "${table_id}_${date_tag}.json copied to ~{gcs_uri_prefix} (${date_tag})"
     done
