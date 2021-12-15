@@ -74,6 +74,7 @@ task terra_to_bigquery {
 
   # Loop through inputs and run python script to create tsv/json and push json to gcp bucket
     for index in  ${!terra_project_array[@]}; do
+      date_tag=$(date +"%Y-%m-%d-%Hh-%Mm-%Ss")
       terra_project=${terra_project_array[$index]}
       workspace_name=${workspace_name_array[$index]}
       table_name=${table_name_array[$index]}
@@ -81,7 +82,7 @@ task terra_to_bigquery {
 
       export terra_project workspace_name table_name table_id
 
-      echo -e "\n::Procesing $table_id for export::"
+      echo -e "\n::Procesing $table_id for export (${date_tag})::"
 
       python3<<CODE
   import csv
@@ -115,10 +116,27 @@ task terra_to_bigquery {
     rows.append(outrow)
 
   # Writing tsv output from dictionary object
-  with open(out_fname+'.tsv', 'w') as outf:
+  with open(out_fname+'_temp.tsv', 'w') as outf:
     writer = csv.DictWriter(outf, headers.keys(), delimiter='\t', dialect=csv.unix_dialect, quoting=csv.QUOTE_MINIMAL)
     writer.writeheader()
     writer.writerows(rows)
+
+  # Add column to capture source terra table (table_id) 
+  with open('out_fname+'_temp.tsv','r') as csvinput:
+    with open(out_fname+'.tsv', 'w') as csvoutput:
+        writer = csv.writer(csvoutput, delimiter='\t')
+        reader = csv.reader(csvinput, delimiter='\t')
+
+        all = []
+        row = next(reader)
+        row.append("source_terra_table")
+        all.append(row)
+
+        for row in reader:
+            row.append(out_fname)
+            all.append(row)
+
+        writer.writerows(all)
 
   # Writing the newline json file from tsv output above
   with open(out_fname+'.tsv', 'r') as infile:
@@ -154,8 +172,11 @@ task terra_to_bigquery {
   CODE
 
       # add date tag when transferring file to gcp
+      date_tag=$(date +"%Y-%m-%d-%Hh-%Mm-%Ss")
+      gsutil -m cp ${table_id}_temp.json "~{gcs_uri_prefix}tsv_check/"
+      gsutil -m cp ${table_id}.json "~{gcs_uri_prefix}tsv_check/"
       gsutil -m cp "${table_id}.json" "~{gcs_uri_prefix}${table_id}_${date_tag}.json"
-      echo "${table_id}_${date_tag}.json copied to ~{gcs_uri_prefix}"
+      echo "${table_id}_${date_tag}.json copied to ~{gcs_uri_prefix} (${date_tag})"
     done
 
     sleep ~{sleep_time}
