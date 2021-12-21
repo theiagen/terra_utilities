@@ -2,12 +2,16 @@ version 1.0
 
 import "../tasks/task_file_handling.wdl" as file_handling
 import "../tasks/task_versioning.wdl" as versioning
+import "../tasks/task_fapi.wdl" as fapi
 
 workflow transfer_assembly_files {
   input {
     Array[String] assemblies
     Array[String] samplenames
     Array[Float] percent_reference_coverage
+    Boolean import_terra_table = false
+    String target_terra_project = "NA"
+    String target_workspace_name = "NA"
     String target_bucket
     String target_root_entity
     String transferred_file_column_header
@@ -25,8 +29,17 @@ workflow transfer_assembly_files {
       samplenames = filter_assemblies.samplenames_filterred,
       target_bucket = target_bucket,
       target_root_entity = target_root_entity,
-      transferred_file_column_header = transferred_file_column_header
+      transferred_file_column_header = transferred_file_column_header,
+      create_terra_table = true
     }
+  if(import_terra_table){
+    call fapi.import_terra_table as import_table {
+      input:
+        terra_project = target_terra_project,
+        workspace_name = target_workspace_name,
+        terra_table = transfer_files.transferred_files
+    }
+  }
   call versioning.version_capture{
     input:
   }
