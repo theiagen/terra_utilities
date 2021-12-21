@@ -15,7 +15,7 @@ task import_terra_table {
   runtime {
     memory: "4 GB"
     cpu: 2
-    docker: "quay.io/broadinstitute/terra-tools:tqdm"
+    docker: "broadinstitute/terra-tools:tqdm"
     disks: "local-disk 100 HDD"
   }
 }
