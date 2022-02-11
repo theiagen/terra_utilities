@@ -153,19 +153,65 @@ task zip_files {
 task transfer_files {
   input {
     Array[String] files_to_transfer
+    Array[String] samplenames
     String target_bucket
+    Boolean create_terra_table = true
+    String target_root_entity="transferred_files"
+    String transferred_file_column_header="transferred_file"
     Int CPUs = 4
     Int mem_size_gb = 8
     String? docker_image = "quay.io/theiagen/utility:1.1"
   }
   command <<<
-    file_path_array="~{sep=' ' files_to_transfer}"
-
-    gsutil -m cp -n ${file_path_array[@]} ~{target_bucket}
+    file_path_array=(~{sep=' ' files_to_transfer})
+    file_path_array_len=$(echo "${#file_path_array[@]}")
+    file_path_string_array="~{sep=' ' files_to_transfer}"
+    samplename_array=(~{sep=' ' samplenames})
+    samplename_array_len=$(echo "${#samplename_array[@]}")
     
-    echo "transferred_files" > transferred_files.tsv
-    gsutil ls ~{target_bucket} >> transferred_files.tsv        
+    # Set output header
+    if ~{create_terra_table}; then
+      # create header for terra data table outout 
+      echo -e "entity:~{target_root_entity}_id\t~{transferred_file_column_header}" > transferred_files.tsv
+      # Ensure samplename and assembly array legnths are of equal length
+      echo "Samples: $samplename_array_len, file_paths: $file_path_array_len"
+      if [ "$samplename_array_len" -ne "$file_path_array_len" ]; then
+        echo "Input arrays are of unequal length. Samplenames: $samplename_array_len, file_paths: $file_path_array_len" >&2
+        exit 1
+      else 
+        echo "Input arrays are of equal length. Samplenames: $samplename_array_len, file_paths: $file_path_array_len"
+      fi
+    else 
+      #create header for transferred files output (non terra data table)
+      echo -e "~{transferred_file_column_header}" > transferred_files.tsv
+    fi
+        
+    #transfer files to target bucket
+    echo "Running gsutil -m cp -n ${file_path_string_array[@]} ~{target_bucket}"
+    gsutil -m cp -n ${file_path_string_array[@]} ~{target_bucket}
+    
+    #create datatable for transferred files
+    for index in ${!file_path_array[@]}; do
+      transferred_file=${file_path_array[$index]}
+      transferred_file=$(echo ${transferred_file} | awk -F "/" '{print $NF}')
+      samplename=${samplename_array[$index]}
+      gcp_address="~{target_bucket}${transferred_file}"
+      echo "GCP address: ${gcp_address}"
+      
+      if [ $(gsutil -q stat ${gcp_address}; echo $?) == 1 ]; then
+        echo "${transferred_file} does not exist in ~{target_bucket}" >&2
+      else
+        echo "${transferred_file} found in ~{target_bucket}"
+        # populate transferred_files.tsv 
+        if ~{create_terra_table}; then
+          echo -e "${samplename}\t${gcp_address}" >> transferred_files.tsv
+        else 
+          echo "${gcp_address}" >> transferred_files.tsv
+        fi
+      fi
+    done
 
+  
 >>>
   output {
     File transferred_files = "transferred_files.tsv"

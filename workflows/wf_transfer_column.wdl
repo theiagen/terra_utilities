@@ -6,11 +6,13 @@ import "../tasks/task_versioning.wdl" as versioning
 workflow transfer_column_content {
   input {
     Array[String] files_to_transfer
+    Array[String] samplenames
     String target_bucket
   }
   call file_handling.transfer_files{
     input:
       files_to_transfer=files_to_transfer,
+      samplenames=samplenames,
       target_bucket=target_bucket
     }
   call versioning.version_capture{
