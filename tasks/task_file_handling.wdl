@@ -107,7 +107,13 @@ task cat_files {
     # cat files one by one and store them in the concatenated_files file
     for index in ${!file_array[@]}; do
       file=${file_array[$index]}
-      cat ${file} >> ~{concatenated_file_name}
+      if [[ "${file}" == *".gz" ]] ; then 
+        cat_reads="zcat"
+      else
+        cat_reads="cat"
+      fi 
+
+      $cat_reads ${file} >> ~{concatenated_file_name}
     done
 >>>
   output {
