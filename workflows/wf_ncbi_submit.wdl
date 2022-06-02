@@ -8,8 +8,8 @@ workflow ncbi_submission {
     String workspace_name
     String table_name
     Array[String] sample_names
-    String ncbi_username
-    String ncbi_config_stuff
+    #String ncbi_username
+    #String ncbi_config_stuff
   }
   call submission.prune_table {
     input:
@@ -18,8 +18,7 @@ workflow ncbi_submission {
       table_name = table_name,
       sample_names = sample_names
   }
-
-
-
-
+  output {
+     File pruned_table = prune_table.pruned_table
+  }
 }

@@ -40,3 +40,8 @@ workflows:
    primaryDescriptorPath: /workflows/wf_transfer_column.wdl
    testParameterFiles:
     - empty.json
+ - name: NCBI_Submission
+   subclass: WDL
+   primaryDescriptorPath: /workflows/wf_ncbi_submission.wdl
+   testParameterFiles:
+    - empty.json
