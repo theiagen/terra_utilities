@@ -26,7 +26,8 @@ task prune_table {
     table = pd.read_csv(tablename, delimiter='\t', header=0)
     print(table)
     # extract the samples for upload from the entire table
-    table = table[table["entity:~{table_name}_id"].isin("~{sep='*' sample_names}".split("*"))]
+    column_name="entity:~{table_name}_id"
+    table = table[table[column_name].isin("~{sep='*' sample_names}".split("*"))]
     print(table)
     # create biosample/sra metadata sheets
     outfile = table.to_csv("pruned-table.tsv", sep='\t', index=False)
