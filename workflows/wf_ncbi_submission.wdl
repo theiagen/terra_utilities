@@ -11,8 +11,8 @@ workflow ncbi_submission {
     Array[String] sample_names
     File ncbi_config_js
     File? input_table
-    String bioproject
-    String gcp_bucket_uri
+  #  String bioproject
+  #  String gcp_bucket_uri
   }
   call submission.prune_table {
     input:
@@ -40,6 +40,6 @@ workflow ncbi_submission {
      File biosample_metadata = prune_table.biosample_table
      File sra_metadata = prune_table.sra_table
      File biosample_submission_xml = biosample_submit_tsv_to_xml.submission_xml
-     File sra_submission_xml = sra_tsv_to_xml.submission_xml
+  #   File sra_submission_xml = sra_tsv_to_xml.submission_xml
   }
 }

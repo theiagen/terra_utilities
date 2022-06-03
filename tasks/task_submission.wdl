@@ -10,10 +10,10 @@ task prune_table {
   }
   command <<<
     # when running on terra, comment out all input_table mentions
-    #python3 /scripts/export_large_tsv/export_large_tsv.py --project ~{project_name} --workspace ~{workspace_name} --entity_type ~{table_name} --tsv_filename ~{table_name}-data.tsv
+    python3 /scripts/export_large_tsv/export_large_tsv.py --project ~{project_name} --workspace ~{workspace_name} --entity_type ~{table_name} --tsv_filename ~{table_name}-data.tsv
     
     # when running locally, use the input_table in place of downloading from Terra
-    cp ~{input_table} ~{table_name}-data.tsv
+    #cp ~{input_table} ~{table_name}-data.tsv
 
     # wc -l ~{table_name}-data.tsv
        
@@ -44,7 +44,6 @@ task prune_table {
   output {
     File biosample_table = "biosample-table.tsv"
     File sra_table = "sra-table.tsv"
-
   }
   runtime {
     docker: "broadinstitute/terra-tools:tqdm"
