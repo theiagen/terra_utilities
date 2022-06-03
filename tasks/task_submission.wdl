@@ -1,6 +1,6 @@
 version 1.0
 
-task prune_table { # this is only for c. auris submission at the moment
+task prune_table {
   input {
     String table_name
     String workspace_name
@@ -15,7 +15,7 @@ task prune_table { # this is only for c. auris submission at the moment
     # when running locally, use the input_table in place of downloading from Terra
     cp ~{input_table} ~{table_name}-data.tsv
 
-    wc -l ~{table_name}-data.tsv
+    # wc -l ~{table_name}-data.tsv
        
     python3 << CODE 
     import pandas as pd
@@ -53,6 +53,7 @@ task prune_table { # this is only for c. auris submission at the moment
     disks: "local-disk 100 SSD"
     preemptible: 0
   }
-
-
 }
+
+
+
