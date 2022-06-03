@@ -1,46 +1,53 @@
 version 1.0
 
-task prune_table {
+task prune_table { # this is only for c. auris submission at the moment
   input {
     String table_name
     String workspace_name
     String project_name
-    #File input_table
+    File? input_table
     Array[String] sample_names
-    String docker_image = "broadinstitute/terra-tools:tqdm"
   }
   command <<<
-    echo "before download"
-    python3 /scripts/export_large_tsv/export_large_tsv.py --project ~{project_name} --workspace ~{workspace_name} --entity_type ~{table_name} --tsv_filename ~{table_name}-data.tsv
-    #cp input_table ~{table_name}-data.tsv
-    echo "after download"
+    # when running on terra, comment out all input_table mentions
+    #python3 /scripts/export_large_tsv/export_large_tsv.py --project ~{project_name} --workspace ~{workspace_name} --entity_type ~{table_name} --tsv_filename ~{table_name}-data.tsv
+    
+    # when running locally, use the input_table in place of downloading from Terra
+    cp ~{input_table} ~{table_name}-data.tsv
+
     wc -l ~{table_name}-data.tsv
-    echo "after wc -l command"
-    # prune out only those in sample_names
+       
     python3 << CODE 
     import pandas as pd
-    print("inside python code")
+  
     # read export table into pandas
     tablename = "~{table_name}-data.tsv"
-    print(tablename)
     table = pd.read_csv(tablename, delimiter='\t', header=0)
-    print(table)
+
     # extract the samples for upload from the entire table
     table = table[table["~{table_name}_id"].isin("~{sep='*' sample_names}".split("*"))]
-    print(table)
-    # create biosample/sra metadata sheets
-    outfile = table.to_csv("pruned-table.tsv", sep='\t', index=False)
-    CODE
+   
+    # create biosample/sra metadata sheets 
+    biosample_metadata = table[["~{table_name}_id", "organism", "isolate", "collected_by", "collection_date", "geo_loc_name", "host", "host_disease", "isolation_source", "lat_lon", "isolation_type"]].copy()
+    biosample_metadata.rename(columns={"~{table_name}_id" : "sample_name"}, inplace=True)
+    
+    biosample_outfile = biosample_metadata.to_csv("biosample-table.tsv", sep='\t', index=False)
 
-    # gcp data transfer
+    sra_metadata = table[["~{table_name}_id", "library_id", "title", "library_strategy", "library_source", "library_selection", "library_layout", "platform", "instrument_model", "design_description", "filetype", "filename", "filename2"]].copy()
+    sra_metadata.rename(columns={"~{table_name}_id" : "sample_id"}, inplace=True)
+
+    sra_outfile = sra_metadata.to_csv("sra-table.tsv", sep='\t', index=False)
+
+    CODE
 
   >>>
   output {
-    File pruned_table = "pruned-table.tsv"
+    File biosample_table = "biosample-table.tsv"
+    File sra_table = "sra-table.tsv"
 
   }
   runtime {
-    docker: "~{docker_image}"
+    docker: "broadinstitute/terra-tools:tqdm"
     memory: "8 GB"
     cpu: 4
     disks: "local-disk 100 SSD"

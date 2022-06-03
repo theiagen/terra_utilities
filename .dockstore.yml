@@ -42,6 +42,6 @@ workflows:
     - empty.json
  - name: NCBI_Submission
    subclass: WDL
-   primaryDescriptorPath: /workflows/wf_ncbi_submit.wdl
+   primaryDescriptorPath: /workflows/wf_ncbi_submission.wdl
    testParameterFiles:
     - empty.json

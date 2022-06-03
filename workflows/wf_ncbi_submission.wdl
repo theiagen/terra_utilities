@@ -19,6 +19,7 @@ workflow ncbi_submission {
       sample_names = sample_names
   }
   output {
-     File pruned_table = prune_table.pruned_table
+     File biosample_metadata = prune_table.biosample_table
+     File sra_metadata = prune_table.sra_table
   }
 }
