@@ -12,10 +12,10 @@ task prune_table {
   }
   command <<<
     # when running on terra, comment out all input_table mentions
-    #python3 /scripts/export_large_tsv/export_large_tsv.py --project ~{project_name} --workspace ~{workspace_name} --entity_type ~{table_name} --tsv_filename ~{table_name}-data.tsv
+    python3 /scripts/export_large_tsv/export_large_tsv.py --project ~{project_name} --workspace ~{workspace_name} --entity_type ~{table_name} --tsv_filename ~{table_name}-data.tsv
     
     # when running locally, use the input_table in place of downloading from Terra
-    cp ~{input_table} ~{table_name}-data.tsv
+    #cp ~{input_table} ~{table_name}-data.tsv
 
     python3 <<CODE 
     import pandas as pd
@@ -67,13 +67,25 @@ task prune_table {
     sra_metadata["read2"] = sra_metadata["read2"].map(lambda filename2: filename2.split('/').pop())   
     sra_metadata.rename(columns={"read1" : "filename", "read2" : "filename2"}, inplace=True)
  
-    ### TRANSFER READS TO GCP BUCKET (if that's allowed--asking NCBI now???)
-    
+    ### Create a file that contains the names of all the reads so we can use gsutil -m cp
+    table["read1"].to_csv("filepaths.tsv", index=False, header=False)
+    table["read2"].to_csv("filepaths.tsv", mode='a', index=False, header=False)
+
     # write metadata tables to tsv output files
     biosample_metadata.to_csv("biosample-table.tsv", sep='\t', index=False)
     sra_metadata.to_csv("sra-table.tsv", sep='\t', index=False)
 
     CODE
+
+    # copy the raw reads to the bucket specified by user
+    export CLOUDSDK_PYTHON=python2.7  # not sure why this works, but google recommended this
+    # iterate through file created earlier to grab the uri for each read file
+    while read -r line; do
+      echo "running \`gsutil -m cp ${line} ~{gcp_bucket_uri}\`"
+      gsutil -m cp -n ${line} ~{gcp_bucket_uri}
+    done < filepaths.tsv
+    unset CLOUDSDK_PYTHON   # probably not necessary, but in case I do more things afterwards, this resets that env var
+
   >>>
   output {
     File biosample_table = "biosample-table.tsv"
@@ -88,6 +100,3 @@ task prune_table {
     preemptible: 0
   }
 }
-
-
-
