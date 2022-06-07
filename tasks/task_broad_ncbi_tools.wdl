@@ -11,7 +11,6 @@ task ncbi_sftp_upload {
 
         String         docker = "quay.io/broadinstitute/ncbi-tools:2.10.7.10"
     }
-
     command <<<
         set -e
         cd /opt/converter
@@ -32,11 +31,9 @@ task ncbi_sftp_upload {
         cd -
         cp /opt/converter/reports/*report*.xml .
     >>>
-
     output {
         Array[File] reports_xmls = glob("*report*.xml")
     }
-
     runtime {
         cpu:     2
         memory:  "2 GB"
@@ -139,7 +136,7 @@ task biosample_submit_tsv_ftp_upload {
         echo "Asymmetrik script version: $ASYMMETRIK_REPO_COMMIT"
         node src/main.js --debug \
             -i=$(basename "~{meta_submit_tsv}") \
-            --uploadFolder="~{target_path}"
+            --uploadFolder="~{target_path}" # target directory on FTP server
         cd -
         cp /opt/converter/reports/~{base}-attributes.tsv /opt/converter/files/~{base}-submission.xml /opt/converter/reports/~{base}-report.*.xml .
     >>>

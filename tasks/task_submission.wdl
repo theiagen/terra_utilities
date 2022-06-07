@@ -27,40 +27,58 @@ task prune_table {
 
     # extract the samples for upload from the entire table
     table = table[table["~{table_name}_id"].isin("~{sep='*' sample_names}".split("*"))]
-    
-    # set required and optional metadata fields based on the biosample_type package
-    if ("~{biosample_type}" == "Microbe") or ("~{biosample_type}" == "microbe"):
-      required_metadata = ["~{table_name}_id", "organism", "isolate", "collection_date", "geo_loc_name", "sample_type"]
-      optional_metadata = ["strain", "isolate", "host", "isolation_source", "collected_by", "identified_by"] # this will be easy to add to
-    elif ("~{biosample_type}" == "Pathogen") or ("~{biosample_type}" == "pathogen"):
-      required_metadata = ["~{table_name}_id", "organism", "collected_by", "collection_date", "geo_loc_name", "host", "host_disease", "isolation_source", "lat_lon", "isolation_type"]
-      optional_metadata = ["isolate", "strain", "bioproject_accession", "host_age", "host_sex"] # this will be easy to add to
-    else:
-      raise Exception('Only "Microbe" and "Pathogen" are supported as acceptable input for the \`biosample_type\` variable at this time. You entered ~{biosample_type}.')
-    
-    # todo: prune qc checks
-
+   
     # remove rows with blank cells from table
     table.replace(r'^\s+$', np.nan, regex=True)        # replace blank cells with NaNs 
     excluded_samples = table[table.isna().any(axis=1)] # write out all rows with NaNs to a new table
-    excluded_samples["~{table_name}_id"].to_csv("excluded-samples.tsv", sep='\t', index=False, header=False) # write the excluded names out to a file
+    excluded_samples["~{table_name}_id"].to_csv("excluded_samples.tsv", sep='\t', index=False, header=False) # write the excluded names out to a file
     table.dropna(axis=0, how='any', inplace=True)      # remove all rows with NaNs from table
-        
+
+    # set required and optional metadata fields based on the biosample_type package
+    if ("~{biosample_type}" == "Microbe") or ("~{biosample_type}" == "microbe"):
+      required_metadata = ["submission_id", "organism", "isolate", "collection_date", "geo_loc_name", "sample_type"]
+      optional_metadata = ["strain", "isolate", "biosample_accession", "host", "isolation_source", "collected_by", "identified_by", "MLST"] # this will be easy to add to
+      # umbrella bioproject = PRJNA531911
+      # subproject depends on organism
+      # "CDC HAI-Seq Gram-negative bacteria (PRJNA288601) will be used for most AR LAb Network submissions related to HAIs"
+      # qc checks:
+      #   q-score >= 30
+      #   reads > 50 bp
+      #   trailing/leading bases removed
+      #   similar GC content to expected genome
+      #   assembled genome ratio ~1.0
+      #   200 contigs or less
+   
+    elif ("~{biosample_type}" == "Pathogen") or ("~{biosample_type}" == "pathogen"):
+      required_metadata = ["submission_id", "organism", "collected_by", "collection_date", "geo_loc_name", "host", "host_disease", "isolation_source", "lat_lon", "isolation_type"]
+      optional_metadata = ["sample_title", "biosample_accession", "strain", "isolate", "culture_collection", "genotype",	"host_age",	"host_description",	"host_disease_outcome",	"host_disease_stage", "host_health_state",	"host_sex",	"host_subject_id",	"host_tissue_sampled",	"passage_history",	"pathotype",	"serotype",	"serovar",	"specimen_voucher",	"subgroup",	"subtype",	"description"] 
+      # umbrella bioproject = PRJNA642852
+      # qc checks:
+      #   gc after trimming 42-47.5%
+      #   average phred after trimming >= 28
+      #   coverage after trimming >= 20X
+    
+    # change table_name_id in required to submission id
+    # strain is submission id as well
+
+    else:
+      raise Exception('Only "Microbe" and "Pathogen" are supported as acceptable input for the \`biosample_type\` variable at this time. You entered ~{biosample_type}.')
+           
     # extract the required metadata from the table
     biosample_metadata = table[required_metadata].copy()
 
-    # add optional metadata fields if present, rename first column
+    # add optional metadata fields if present; rename first column
     for column in optional_metadata:
       if column in table.columns:
         biosample_metadata[column] = table[column]
-    biosample_metadata.rename(columns={"~{table_name}_id" : "sample_name"}, inplace=True)
+    biosample_metadata.rename(columns={"submission_id" : "sample_name"}, inplace=True)
 
     # sra metadata is the same regardless of biosample_type package, but I'm separating it out in case we find out this is incorrect
-    sra_fields = ["~{table_name}_id", "library_id", "title", "library_strategy", "library_source", "library_selection", "library_layout", "platform", "instrument_model", "design_description", "filetype", "read1", "read2"]
+    sra_fields = ["submission_id", "library_id", "title", "library_strategy", "library_source", "library_selection", "library_layout", "platform", "instrument_model", "design_description", "filetype", "read1", "read2"]
     
-    # extract the required metadata from the table, rename first column 
+    # extract the required metadata from the table; rename first column 
     sra_metadata = table[sra_fields].copy()
-    sra_metadata.rename(columns={"~{table_name}_id" : "sample_id"}, inplace=True)
+    sra_metadata.rename(columns={"submission_id" : "sample_id"}, inplace=True)
      
     # prettify the filenames and rename them to be sra compatible
     sra_metadata["read1"] = sra_metadata["read1"].map(lambda filename: filename.split('/').pop())
@@ -72,13 +90,13 @@ task prune_table {
     table["read2"].to_csv("filepaths.tsv", mode='a', index=False, header=False)
 
     # write metadata tables to tsv output files
-    biosample_metadata.to_csv("biosample-table.tsv", sep='\t', index=False)
-    sra_metadata.to_csv("sra-table.tsv", sep='\t', index=False)
+    biosample_metadata.to_csv("biosample_table.tsv", sep='\t', index=False)
+    sra_metadata.to_csv("sra_table.tsv", sep='\t', index=False)
 
     CODE
 
     # copy the raw reads to the bucket specified by user
-    export CLOUDSDK_PYTHON=python2.7  # not sure why this works, but google recommended this
+    export CLOUDSDK_PYTHON=python2.7  # ensure python 2.7 for gsutil commands
     # iterate through file created earlier to grab the uri for each read file
     while read -r line; do
       echo "running \`gsutil -m cp ${line} ~{gcp_bucket_uri}\`"
@@ -88,9 +106,39 @@ task prune_table {
 
   >>>
   output {
-    File biosample_table = "biosample-table.tsv"
-    File sra_table = "sra-table.tsv"
-    File excluded_samples = "excluded-samples.tsv"
+    File biosample_table = "biosample_table.tsv"
+    File sra_table = "sra_table.tsv"
+    File excluded_samples = "excluded_samples.tsv"
+  }
+  runtime {
+    docker: "broadinstitute/terra-tools:tqdm"
+    memory: "8 GB"
+    cpu: 4
+    disks: "local-disk 100 SSD"
+    preemptible: 0
+  }
+}
+
+task add_biosample_accessions {
+  input {
+    File attributes
+    File sra_metadata
+  }
+  command <<<
+    # extract from the attributes file the biosample and original name columns
+    # put the original name in column 1, biosample in column 2
+    awk -F '\t' '{print $3, $1}' OFS='\t' ~{attributes} > biosample_temp.tsv
+
+    # rename the header to match with the sra_metadata file
+    sample_column=$(head ~{sra_metadata} | awk '{print $1}') # necessary because different packages sometimes call these different things
+    new_header="$sample_column\tbiosample_accession"
+    sed -i '1s/^.*/$new_header/' biosample_temp.tsv
+
+    # join the biosample_temp with the sra_metadata
+    join -t $'\t' <(sort ~{sra_metadata}) <(sort biosample_temp.tsv) > "sra_table_with_biosample_accessions.tsv"
+  >>>
+  output {
+    File sra_table = "sra_table_with_biosample_accessions.tsv"
   }
   runtime {
     docker: "broadinstitute/terra-tools:tqdm"

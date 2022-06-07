@@ -13,6 +13,8 @@ workflow ncbi_submission {
     File? input_table
     String biosample_type
     String gcp_bucket_uri
+    String ftp_server
+    String bioproject
   }
   call submission.prune_table {
     input:
@@ -24,25 +26,43 @@ workflow ncbi_submission {
       biosample_type = biosample_type,
       gcp_bucket_uri = gcp_bucket_uri
   }
-  call ncbi_tools.biosample_submit_tsv_to_xml {
-    input:
-      meta_submit_tsv = prune_table.biosample_table,
-      config_js = ncbi_config_js
-  }
-  #call ncbi_tools.sra_tsv_to_xml {
+  #call ncbi_tools.biosample_submit_tsv_to_xml {
   #  input:
-  #    meta_submit_tsv = prune_table.sra_table,
-  #    config_js = ncbi_config_js,
-  #    bioproject = bioproject,
-  #    data_bucket_uri = gcp_bucket_uri
+  #    meta_submit_tsv = prune_table.biosample_table,
+  #    config_js = ncbi_config_js
   #}
-  
-
+  call ncbi_tools.biosample_submit_tsv_ftp_upload {
+    input:
+      meta_submit_tsv = prune_table.biosample_table, 
+      config_js = ncbi_config_js, 
+      target_path = ftp_server
+  }
+  call submission.add_biosample_accessions {
+    input:
+      attributes = biosample_submit_tsv_ftp_upload.attributes_tsv,
+      sra_metadata = prune_table.sra_table
+  }
+  call ncbi_tools.sra_tsv_to_xml {
+    input:
+      meta_submit_tsv = add_biosample_accessions.sra_table,
+      config_js = ncbi_config_js,
+      bioproject = bioproject,
+      data_bucket_uri = gcp_bucket_uri
+  }
+  call ncbi_tools.ncbi_sftp_upload {
+    input: 
+      submission_xml = sra_tsv_to_xml.submission_xml,
+      config_js = ncbi_config_js,
+      target_path = ftp_server      
+  }
   output {
-     File biosample_metadata = prune_table.biosample_table
-     File sra_metadata = prune_table.sra_table
-     File excluded_samples = prune_table.excluded_samples
-     File biosample_submission_xml = biosample_submit_tsv_to_xml.submission_xml
-  #   File sra_submission_xml = sra_tsv_to_xml.submission_xml
+    File sra_metadata = add_biosample_accessions.sra_table
+    File biosample_metadata = prune_table.biosample_table
+    File excluded_samples = prune_table.excluded_samples
+    File attributes_tsv = biosample_submit_tsv_ftp_upload.attributes_tsv
+    File biosample_submission_xml = biosample_submit_tsv_ftp_upload.submission_xml
+    Array[File] biosample_report_xmls = biosample_submit_tsv_ftp_upload.reports_xmls
+    File sra_submission_xml = sra_tsv_to_xml.submission_xml
+    Array[File] sra_report_xmls = ncbi_sftp_upload.reports_xmls
   }
 }
