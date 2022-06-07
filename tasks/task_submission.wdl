@@ -56,8 +56,11 @@ task prune_table {
       # qc checks:
       #   gc after trimming 42-47.5%
       #   average phred after trimming >= 28
+     
       #   coverage after trimming >= 20X
-    
+      #if "mean_coverage_depth" in table.columns:
+      #  table = table[(table.mean_coverage_depth > 20)]
+
     # change table_name_id in required to submission id
     # strain is submission id as well
 
@@ -74,11 +77,11 @@ task prune_table {
     biosample_metadata.rename(columns={"submission_id" : "sample_name"}, inplace=True)
 
     # sra metadata is the same regardless of biosample_type package, but I'm separating it out in case we find out this is incorrect
-    sra_fields = ["submission_id", "library_id", "title", "library_strategy", "library_source", "library_selection", "library_layout", "platform", "instrument_model", "design_description", "filetype", "read1", "read2"]
+    sra_fields = ["library_id", "title", "library_strategy", "library_source", "library_selection", "library_layout", "platform", "instrument_model", "design_description", "filetype", "read1", "read2"]
     
     # extract the required metadata from the table; rename first column 
     sra_metadata = table[sra_fields].copy()
-    sra_metadata.rename(columns={"submission_id" : "sample_id"}, inplace=True)
+    #sra_metadata.rename(columns={"submission_id" : "sample_id"}, inplace=True)
      
     # prettify the filenames and rename them to be sra compatible
     sra_metadata["read1"] = sra_metadata["read1"].map(lambda filename: filename.split('/').pop())

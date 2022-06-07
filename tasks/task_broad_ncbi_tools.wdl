@@ -129,6 +129,9 @@ task biosample_submit_tsv_ftp_upload {
         description: "This registers a table of metadata with NCBI BioSample. It accepts a TSV similar to the web UI input at submit.ncbi.nlm.nih.gov, but converts to an XML, submits via their FTP/XML API, awaits a response, and retrieves a resulting attributes table and returns that as a TSV. This task registers live data with the production NCBI database."
     }
     command <<<
+        # append current date to end of target_path with random string prefacing for testing
+        upload_path="~{target_path}/$(echo $RANDOM | md5sum | head -c 10)_$(date -I)"
+
         set -e
         cd /opt/converter
         cp "~{config_js}" src/config.js
@@ -136,7 +139,7 @@ task biosample_submit_tsv_ftp_upload {
         echo "Asymmetrik script version: $ASYMMETRIK_REPO_COMMIT"
         node src/main.js --debug \
             -i=$(basename "~{meta_submit_tsv}") \
-            --uploadFolder="~{target_path}" # target directory on FTP server
+            --uploadFolder="$upload_path" # target directory on FTP server
         cd -
         cp /opt/converter/reports/~{base}-attributes.tsv /opt/converter/files/~{base}-submission.xml /opt/converter/reports/~{base}-report.*.xml .
     >>>
