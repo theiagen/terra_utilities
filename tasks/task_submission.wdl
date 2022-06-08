@@ -145,8 +145,10 @@ task add_biosample_accessions {
     new_header="$sample_column\tbiosample_accession"
     sed -i '1s/^.*/$new_header/' biosample_temp.tsv
 
+    echo -e "$(head -n 1 ~{sra_metadata})\tbiosample_accession" > "sra_table_with_biosample_accessions.tsv"
+
     # join the biosample_temp with the sra_metadata
-    join -t $'\t' <(sort ~{sra_metadata}) <(sort biosample_temp.tsv) > "sra_table_with_biosample_accessions.tsv"
+    join -t $'\t' <(sort ~{sra_metadata}) <(sort biosample_temp.tsv) >> "sra_table_with_biosample_accessions.tsv"
   >>>
   output {
     File sra_table = "sra_table_with_biosample_accessions.tsv"
