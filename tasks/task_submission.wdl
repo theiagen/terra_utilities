@@ -85,12 +85,13 @@ task prune_table {
     biosample_metadata.rename(columns={"submission_id" : "sample_name"}, inplace=True)
 
     # sra metadata is the same regardless of biosample_type package, but I'm separating it out in case we find out this is incorrect
-    sra_fields = ["library_ID", "title", "library_strategy", "library_source", "library_selection", "library_layout", "platform", "instrument_model", "design_description", "filetype", "read1", "read2"]
+    sra_fields = ["submission_id", "library_ID", "title", "library_strategy", "library_source", "library_selection", "library_layout", "platform", "instrument_model", "design_description", "filetype", "read1", "read2"]
     
     # extract the required metadata from the table; rename first column 
     sra_metadata = table[sra_fields].copy()
     #sra_metadata.rename(columns={"submission_id" : "sample_id"}, inplace=True)
-     
+    sra_metadata.rename(columns={"submission_id" : "sample_name"}, inplace=True)
+
     # prettify the filenames and rename them to be sra compatible
     sra_metadata["read1"] = sra_metadata["read1"].map(lambda filename: filename.split('/').pop())
     sra_metadata["read2"] = sra_metadata["read2"].map(lambda filename2: filename2.split('/').pop())   
@@ -141,14 +142,16 @@ task add_biosample_accessions {
     awk -F '\t' '{print $3, $1}' OFS='\t' ~{attributes} > biosample_temp.tsv
 
     # rename the header to match with the sra_metadata file
-    sample_column=$(head ~{sra_metadata} | awk '{print $1}') # necessary because different packages sometimes call these different things
-    new_header="$sample_column\tbiosample_accession"
-    sed -i '1s/^.*/$new_header/' biosample_temp.tsv
+    #sample_column=$(head ~{sra_metadata} | awk '{print $1}') # necessary because different packages sometimes call these different things
+    #new_header="$sample_column\tbiosample_accession"
+    #sed -i '1s/^.*/$new_header/' biosample_temp.tsv
 
     echo -e "$(head -n 1 ~{sra_metadata})\tbiosample_accession" > "sra_table_with_biosample_accessions.tsv"
 
     # join the biosample_temp with the sra_metadata
     join -t $'\t' <(sort ~{sra_metadata}) <(sort biosample_temp.tsv) >> "sra_table_with_biosample_accessions.tsv"
+
+    # drop submission_id afterwards (first column)
   >>>
   output {
     File sra_table = "sra_table_with_biosample_accessions.tsv"
