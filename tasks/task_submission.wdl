@@ -85,7 +85,7 @@ task prune_table {
     biosample_metadata.rename(columns={"submission_id" : "sample_name"}, inplace=True)
 
     # sra metadata is the same regardless of biosample_type package, but I'm separating it out in case we find out this is incorrect
-    sra_fields = ["library_id", "title", "library_strategy", "library_source", "library_selection", "library_layout", "platform", "instrument_model", "design_description", "filetype", "read1", "read2"]
+    sra_fields = ["library_ID", "title", "library_strategy", "library_source", "library_selection", "library_layout", "platform", "instrument_model", "design_description", "filetype", "read1", "read2"]
     
     # extract the required metadata from the table; rename first column 
     sra_metadata = table[sra_fields].copy()

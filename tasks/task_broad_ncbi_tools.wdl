@@ -12,7 +12,7 @@ task ncbi_sftp_upload {
         String         docker = "quay.io/broadinstitute/ncbi-tools:2.10.7.10"
     }
     command <<<
-        upload_path="~{target_path}/$(date -I)_$(echo $RANDOM | md5sum | head -c 10)"
+        upload_path="~{target_path}/sra/$(date -I)_$(echo $RANDOM | md5sum | head -c 10)"
 
         set -e
         cd /opt/converter
@@ -132,7 +132,7 @@ task biosample_submit_tsv_ftp_upload {
     }
     command <<<
         # append current date to end of target_path with random string prefacing for testing
-        upload_path="~{target_path}/$(date -I)_$(echo $RANDOM | md5sum | head -c 10)"
+        upload_path="~{target_path}/biosample/$(date -I)_$(echo $RANDOM | md5sum | head -c 10)"
 
         set -e
         cd /opt/converter
