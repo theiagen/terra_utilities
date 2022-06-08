@@ -13,7 +13,7 @@ workflow ncbi_submission {
     File? input_table
     String biosample_type
     String gcp_bucket_uri
-    String ftp_server
+    String path_on_ftp_server
     String bioproject
   }
   call submission.prune_table {
@@ -24,6 +24,7 @@ workflow ncbi_submission {
       sample_names = sample_names,
       input_table = input_table,
       biosample_type = biosample_type,
+      bioproject = bioproject,
       gcp_bucket_uri = gcp_bucket_uri
   }
   #call ncbi_tools.biosample_submit_tsv_to_xml {
@@ -35,7 +36,7 @@ workflow ncbi_submission {
     input:
       meta_submit_tsv = prune_table.biosample_table, 
       config_js = ncbi_config_js, 
-      target_path = ftp_server
+      target_path = path_on_ftp_server
   }
   call submission.add_biosample_accessions {
     input:
@@ -53,7 +54,7 @@ workflow ncbi_submission {
     input: 
       submission_xml = sra_tsv_to_xml.submission_xml,
       config_js = ncbi_config_js,
-      target_path = ftp_server      
+      target_path = path_on_ftp_server      
   }
   output {
     File sra_metadata = add_biosample_accessions.sra_table

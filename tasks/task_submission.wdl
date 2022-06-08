@@ -8,6 +8,7 @@ task prune_table {
     File? input_table
     Array[String] sample_names
     String biosample_type
+    String bioproject
     String gcp_bucket_uri
   }
   command <<<
@@ -33,11 +34,13 @@ task prune_table {
     excluded_samples = table[table.isna().any(axis=1)] # write out all rows with NaNs to a new table
     excluded_samples["~{table_name}_id"].to_csv("excluded_samples.tsv", sep='\t', index=False, header=False) # write the excluded names out to a file
     table.dropna(axis=0, how='any', inplace=True)      # remove all rows with NaNs from table
-
+    
     # set required and optional metadata fields based on the biosample_type package
     if ("~{biosample_type}" == "Microbe") or ("~{biosample_type}" == "microbe"):
       required_metadata = ["submission_id", "organism", "isolate", "collection_date", "geo_loc_name", "sample_type"]
-      optional_metadata = ["strain", "isolate", "biosample_accession", "host", "isolation_source", "collected_by", "identified_by", "MLST"] # this will be easy to add to
+      optional_metadata = ["strain", "isolate", "bioproject_accession", "attribute_package", "host", "isolation_source", "collected_by", "identified_by", "MLST"] # this will be easy to add to
+      # add a column for biosample package -- required for XML submission
+      table["attribute_package"] = "Microbe"
       # umbrella bioproject = PRJNA531911
       # subproject depends on organism
       # "CDC HAI-Seq Gram-negative bacteria (PRJNA288601) will be used for most AR LAb Network submissions related to HAIs"
@@ -51,7 +54,9 @@ task prune_table {
    
     elif ("~{biosample_type}" == "Pathogen") or ("~{biosample_type}" == "pathogen"):
       required_metadata = ["submission_id", "organism", "collected_by", "collection_date", "geo_loc_name", "host", "host_disease", "isolation_source", "lat_lon", "isolation_type"]
-      optional_metadata = ["sample_title", "biosample_accession", "strain", "isolate", "culture_collection", "genotype",	"host_age",	"host_description",	"host_disease_outcome",	"host_disease_stage", "host_health_state",	"host_sex",	"host_subject_id",	"host_tissue_sampled",	"passage_history",	"pathotype",	"serotype",	"serovar",	"specimen_voucher",	"subgroup",	"subtype",	"description"] 
+      optional_metadata = ["sample_title", "bioproject_accession", "attribute_package", "strain", "isolate", "culture_collection", "genotype",	"host_age",	"host_description",	"host_disease_outcome",	"host_disease_stage", "host_health_state",	"host_sex",	"host_subject_id",	"host_tissue_sampled",	"passage_history",	"pathotype",	"serotype",	"serovar",	"specimen_voucher",	"subgroup",	"subtype",	"description"] 
+      # add a column for biosample package -- required for XML submission
+      table["attribute_package"] = "Pathogen.cl"
       # umbrella bioproject = PRJNA642852
       # qc checks:
       #   gc after trimming 42-47.5%
@@ -66,7 +71,10 @@ task prune_table {
 
     else:
       raise Exception('Only "Microbe" and "Pathogen" are supported as acceptable input for the \`biosample_type\` variable at this time. You entered ~{biosample_type}.')
-           
+
+    # add bioproject_accesion to table
+    table["bioproject_accession"] = "~{bioproject}"
+    
     # extract the required metadata from the table
     biosample_metadata = table[required_metadata].copy()
 

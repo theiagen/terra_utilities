@@ -12,6 +12,8 @@ task ncbi_sftp_upload {
         String         docker = "quay.io/broadinstitute/ncbi-tools:2.10.7.10"
     }
     command <<<
+        upload_path="~{target_path}/$(date -I)_$(echo $RANDOM | md5sum | head -c 10)"
+
         set -e
         cd /opt/converter
         cp "~{config_js}" src/config.js
@@ -26,7 +28,7 @@ task ncbi_sftp_upload {
         node src/main.js --debug \
             --uploadFiles="$MANIFEST" \
             --poll="~{wait_for}" \
-            --uploadFolder="~{target_path}"
+            --uploadFolder="$upload_path"
         ls -alF files reports
         cd -
         cp /opt/converter/reports/*report*.xml .
@@ -130,7 +132,7 @@ task biosample_submit_tsv_ftp_upload {
     }
     command <<<
         # append current date to end of target_path with random string prefacing for testing
-        upload_path="~{target_path}/$(echo $RANDOM | md5sum | head -c 10)_$(date -I)"
+        upload_path="~{target_path}/$(date -I)_$(echo $RANDOM | md5sum | head -c 10)"
 
         set -e
         cd /opt/converter
