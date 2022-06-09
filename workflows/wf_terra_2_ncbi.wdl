@@ -3,7 +3,7 @@ version 1.0
 import "../tasks/task_submission.wdl" as submission
 import "../tasks/task_broad_ncbi_tools.wdl" as ncbi_tools
 
-workflow Terra2SRA {
+workflow Terra_2_NCBI {
   input {
     String project_name
     String workspace_name
