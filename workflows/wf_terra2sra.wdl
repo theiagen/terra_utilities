@@ -3,7 +3,7 @@ version 1.0
 import "../tasks/task_submission.wdl" as submission
 import "../tasks/task_broad_ncbi_tools.wdl" as ncbi_tools
 
-workflow ncbi_submission {
+workflow Terra2SRA {
   input {
     String project_name
     String workspace_name
@@ -27,11 +27,6 @@ workflow ncbi_submission {
       bioproject = bioproject,
       gcp_bucket_uri = gcp_bucket_uri
   }
-  #call ncbi_tools.biosample_submit_tsv_to_xml {
-  #  input:
-  #    meta_submit_tsv = prune_table.biosample_table,
-  #    config_js = ncbi_config_js
-  #}
   call ncbi_tools.biosample_submit_tsv_ftp_upload {
     input:
       meta_submit_tsv = prune_table.biosample_table, 

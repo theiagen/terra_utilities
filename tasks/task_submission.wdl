@@ -66,9 +66,6 @@ task prune_table {
       #if "mean_coverage_depth" in table.columns:
       #  table = table[(table.mean_coverage_depth > 20)]
 
-    # change table_name_id in required to submission id
-    # strain is submission id as well
-
     else:
       raise Exception('Only "Microbe" and "Pathogen" are supported as acceptable input for the \`biosample_type\` variable at this time. You entered ~{biosample_type}.')
 
@@ -141,16 +138,13 @@ task add_biosample_accessions {
     # put the original name in column 1, biosample in column 2
     awk -F '\t' '{print $3, $1}' OFS='\t' ~{attributes} > biosample_temp.tsv
 
-    # rename the header to match with the sra_metadata file
-    #sample_column=$(head ~{sra_metadata} | awk '{print $1}') # necessary because different packages sometimes call these different things
-    #new_header="$sample_column\tbiosample_accession"
-    #sed -i '1s/^.*/$new_header/' biosample_temp.tsv
-
+    # echo out the header
     echo -e "$(head -n 1 ~{sra_metadata})\tbiosample_accession" > "sra_table_with_biosample_accessions-with-sample-names.tsv"
 
-    # join the biosample_temp with the sra_metadata
+    # join the biosample_temp with the sra_metadata; using tail to skip the header 
     join -t $'\t' <(sort <(tail -n+2 ~{sra_metadata})) <(sort <(tail -n+2 biosample_temp.tsv)) >> "sra_table_with_biosample_accessions-with-sample-names.tsv"
 
+    # remove the unnecessary submission_id column
     cut -f2- "sra_table_with_biosample_accessions-with-sample-names.tsv" > "sra_table_with_biosample_accessions.tsv"
   
   >>>
