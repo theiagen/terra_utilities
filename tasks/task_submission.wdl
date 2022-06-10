@@ -112,7 +112,7 @@ task prune_table {
     # iterate through file created earlier to grab the uri for each read file
     while read -r line; do
       echo "running \`gsutil -m cp ${line} ~{gcp_bucket_uri}\`"
-    #  gsutil -m cp -n ${line} ~{gcp_bucket_uri}
+      gsutil -m cp -n ${line} ~{gcp_bucket_uri}
     done < filepaths.tsv
     unset CLOUDSDK_PYTHON   # probably not necessary, but in case I do more things afterwards, this resets that env var
 
