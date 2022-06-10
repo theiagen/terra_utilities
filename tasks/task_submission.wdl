@@ -13,10 +13,10 @@ task prune_table {
   }
   command <<<
     # when running on terra, comment out all input_table mentions
-    python3 /scripts/export_large_tsv/export_large_tsv.py --project ~{project_name} --workspace ~{workspace_name} --entity_type ~{table_name} --tsv_filename ~{table_name}-data.tsv
+    #python3 /scripts/export_large_tsv/export_large_tsv.py --project ~{project_name} --workspace ~{workspace_name} --entity_type ~{table_name} --tsv_filename ~{table_name}-data.tsv
     
     # when running locally, use the input_table in place of downloading from Terra
-    #cp ~{input_table} ~{table_name}-data.tsv
+    cp ~{input_table} ~{table_name}-data.tsv
 
     python3 <<CODE 
     import pandas as pd
@@ -28,13 +28,7 @@ task prune_table {
 
     # extract the samples for upload from the entire table
     table = table[table["~{table_name}_id"].isin("~{sep='*' sample_names}".split("*"))]
-   
-    # remove rows with blank cells from table
-    table.replace(r'^\s+$', np.nan, regex=True)        # replace blank cells with NaNs 
-    excluded_samples = table[table.isna().any(axis=1)] # write out all rows with NaNs to a new table
-    excluded_samples["~{table_name}_id"].to_csv("excluded_samples.tsv", sep='\t', index=False, header=False) # write the excluded names out to a file
-    table.dropna(axis=0, how='any', inplace=True)      # remove all rows with NaNs from table
-    
+
     # set required and optional metadata fields based on the biosample_type package
     if ("~{biosample_type}" == "Microbe") or ("~{biosample_type}" == "microbe"):
       required_metadata = ["submission_id", "organism", "isolate", "collection_date", "geo_loc_name", "sample_type"]
@@ -69,6 +63,18 @@ task prune_table {
     else:
       raise Exception('Only "Microbe" and "Pathogen" are supported as acceptable input for the \`biosample_type\` variable at this time. You entered ~{biosample_type}.')
 
+    # sra metadata is the same regardless of biosample_type package, but I'm separating it out in case we find out this is incorrect
+    sra_fields = ["submission_id", "library_ID", "title", "library_strategy", "library_source", "library_selection", "library_layout", "platform", "instrument_model", "design_description", "filetype", "read1", "read2"]
+    
+    # combine all required fields into one array for easy removal of NaN cells
+    required_fields = required_metadata + sra_fields
+
+    # remove required rows with blank cells from table
+    table.replace(r'^\s+$', np.nan, regex=True) # replace blank cells with NaNs 
+    excluded_samples = table[table[required_fields].isna().any(axis=1)] # write out all rows that are required with NaNs to a new table
+    excluded_samples["~{table_name}_id"].to_csv("excluded_samples.tsv", sep='\t', index=False, header=False) # write the excluded names out to a file
+    table.dropna(subset=required_fields, axis=0, how='any', inplace=True) # remove all rows that are required with NaNs from table
+    
     # add bioproject_accesion to table
     table["bioproject_accession"] = "~{bioproject}"
     
@@ -81,9 +87,6 @@ task prune_table {
         biosample_metadata[column] = table[column]
     biosample_metadata.rename(columns={"submission_id" : "sample_name"}, inplace=True)
 
-    # sra metadata is the same regardless of biosample_type package, but I'm separating it out in case we find out this is incorrect
-    sra_fields = ["submission_id", "library_ID", "title", "library_strategy", "library_source", "library_selection", "library_layout", "platform", "instrument_model", "design_description", "filetype", "read1", "read2"]
-    
     # extract the required metadata from the table; rename first column 
     sra_metadata = table[sra_fields].copy()
     #sra_metadata.rename(columns={"submission_id" : "sample_id"}, inplace=True)
@@ -109,15 +112,18 @@ task prune_table {
     # iterate through file created earlier to grab the uri for each read file
     while read -r line; do
       echo "running \`gsutil -m cp ${line} ~{gcp_bucket_uri}\`"
-      gsutil -m cp -n ${line} ~{gcp_bucket_uri}
+    #  gsutil -m cp -n ${line} ~{gcp_bucket_uri}
     done < filepaths.tsv
     unset CLOUDSDK_PYTHON   # probably not necessary, but in case I do more things afterwards, this resets that env var
 
+    # to do: make md5sum here
+    echo $RANDOM | md5sum | head -c 10 | tee RANDOM_STRING
   >>>
   output {
     File biosample_table = "biosample_table.tsv"
     File sra_table = "sra_table.tsv"
     File excluded_samples = "excluded_samples.tsv"
+    String random_string = read_string("RANDOM_STRING")
   }
   runtime {
     docker: "broadinstitute/terra-tools:tqdm"

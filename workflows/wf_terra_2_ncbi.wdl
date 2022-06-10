@@ -31,7 +31,8 @@ workflow Terra_2_NCBI {
     input:
       meta_submit_tsv = prune_table.biosample_table, 
       config_js = ncbi_config_js, 
-      target_path = path_on_ftp_server
+      target_path = path_on_ftp_server,
+      random_string = prune_table.random_string
   }
   call submission.add_biosample_accessions {
     input:
@@ -49,7 +50,8 @@ workflow Terra_2_NCBI {
     input: 
       submission_xml = sra_tsv_to_xml.submission_xml,
       config_js = ncbi_config_js,
-      target_path = path_on_ftp_server      
+      target_path = path_on_ftp_server,
+      random_string = prune_table.random_string      
   }
   output {
     File sra_metadata = add_biosample_accessions.sra_table
