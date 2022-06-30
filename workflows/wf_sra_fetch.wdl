@@ -21,9 +21,15 @@ task fastq_dl_sra {
   command <<<
     fastq-dl --version | tee VERSION
     fastq-dl ~{sra_accession} SRA
+
+    # tag single-end reads with _1
+    if [ -f "~{sra_accession}.fastq.gz" ]; then
+      mv "~{sra_accession}.fastq.gz" "~{sra_accession}_1.fastq.gz"
+    fi
+
   >>>
   output {
-    File read1="${sra_accession}_1.fastq.gz"
+    File read1="~{sra_accession}_1.fastq.gz"
     File? read2="${sra_accession}_2.fastq.gz"
   }
   runtime {
