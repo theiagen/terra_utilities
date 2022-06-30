@@ -2,29 +2,29 @@ version 1.0
 
 workflow fetch_sra_to_fastq {
   input {
-    String SRR
+    String sra_accession
   }
-  call fastq-dl-sra {
+  call fastq_dl_sra {
     input:
-      sra_id=SRR
+      sra_accession=sra_accession
   }
   output {
-    Fil read1 = fastq-dl-sra.read1
-    File? read2 = fastq-dl-sra.read2
+    File read1 = fastq_dl_sra.read1
+    File? read2 = fastq_dl_sra.read2
   }
 }
 
-task fastq-dl-sra {
+task fastq_dl_sra {
   input {
-    String sra_id
+    String sra_accession
   }
   command <<<
     fastq-dl --version | tee VERSION
-    fastq-dl ~{SRR}
+    fastq-dl ~{sra_accession}
   >>>
   output {
-    File read1="${sra_id}_1.fastq.gz"
-    File? ead2="${sra_id}_2.fastq.gz"
+    File read1="${sra_accession}_1.fastq.gz"
+    File? read2="${sra_accession}_2.fastq.gz"
   }
   runtime {
     docker: "quay.io/biocontainers/fastq-dl:1.1.0--hdfd78af_0"
