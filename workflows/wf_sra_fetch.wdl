@@ -20,7 +20,7 @@ task fastq_dl_sra {
   }
   command <<<
     fastq-dl --version | tee VERSION
-    fastq-dl ~{sra_accession}
+    fastq-dl ~{sra_accession} SRA
   >>>
   output {
     File read1="${sra_accession}_1.fastq.gz"
