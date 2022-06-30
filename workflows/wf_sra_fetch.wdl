@@ -26,11 +26,12 @@ task prefetch_fastq_dump {
   command {
     prefetch --version | head -1 | tee VERSION
     prefetch ${sra_id}
-    fastq-dump --version | head -1 | tee VERSION
-    fastq-dump \
-    --gzip \
+    fasterq-dump --version | head -1 | tee VERSION
+    fasterq-dump \
     --split-files \
     ${sra_id}
+    
+    gzip *.fastq
   }
 
   output {
