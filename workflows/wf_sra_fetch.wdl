@@ -1,49 +1,36 @@
 version 1.0
 
 workflow fetch_sra_to_fastq {
-
   input {
-    String    SRR
+    String SRR
   }
-
-  call prefetch_fastq_dump {
+  call fastq-dl-sra {
     input:
       sra_id=SRR
   }
-
   output {
-    File    read1   =prefetch_fastq_dump.read1
-    File?    read2   =prefetch_fastq_dump.read2
+    Fil read1 = fastq-dl-sra.read1
+    File? read2 = fastq-dl-sra.read2
   }
 }
 
-task prefetch_fastq_dump {
-
+task fastq-dl-sra {
   input {
-    String    sra_id
+    String sra_id
   }
-
-  command {
-    prefetch --version | head -1 | tee VERSION
-    prefetch ${sra_id}
-    fasterq-dump --version | head -1 | tee VERSION
-    fasterq-dump \
-    --split-files \
-    ${sra_id}
-    
-    gzip *.fastq
-  }
-
+  command <<<
+    fastq-dl --version | tee VERSION
+    fastq-dl ~{SRR}
+  >>>
   output {
-    File    read1="${sra_id}_1.fastq.gz"
-    File?    read2="${sra_id}_2.fastq.gz"
+    File read1="${sra_id}_1.fastq.gz"
+    File? ead2="${sra_id}_2.fastq.gz"
   }
-
   runtime {
-    docker:       "staphb/sratoolkit:2.9.2"
-    memory:       "8 GB"
-    cpu:          2
-    disks:        "local-disk 100 SSD"
+    docker: "quay.io/biocontainers/fastq-dl:1.1.0--hdfd78af_0"
+    memory:"8 GB"
+    cpu: 2
+    disks: "local-disk 100 SSD"
     preemptible:  1
   }
 }
