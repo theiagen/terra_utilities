@@ -30,7 +30,7 @@ task fastq_dl_sra {
   >>>
   output {
     File read1="~{sra_accession}_1.fastq.gz"
-    File? read2="${sra_accession}_2.fastq.gz"
+    File? read2="~{sra_accession}_2.fastq.gz"
   }
   runtime {
     docker: "quay.io/biocontainers/fastq-dl:1.1.0--hdfd78af_0"
