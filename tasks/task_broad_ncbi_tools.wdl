@@ -1,19 +1,18 @@
 version 1.0
 
-task ncbi_sftp_upload {
+task ncbi_sftp_upload { # used6
     input {
         File           submission_xml
         Array[File]    additional_files = []
         File           config_js
         String         target_path
-        String         random_string
 
         String         wait_for="1"  # all, disabled, some number
 
         String         docker = "quay.io/broadinstitute/ncbi-tools:2.10.7.10"
     }
     command <<<
-        upload_path="~{target_path}/sra/$(date -I)_~{random_string}"
+        upload_path="~{target_path}/sra/$(date +'%Y-%m-%d_%H-%M-%S')"
 
         set -e
         cd /opt/converter
@@ -32,12 +31,16 @@ task ncbi_sftp_upload {
             --uploadFolder="$upload_path"
         ls -alF files reports
         cd -
-        cp /opt/converter/reports/*report*.xml .
+        cp /opt/converter/reports/*report.*.xml .
+
+        cat "#### REPORT XML FILES ####"
+        cat *report.*.xml
+
     >>>
     output {
         Array[File] reports_xmls = glob("*report*.xml")
     }
-    runtime {
+    runtime { 
         cpu:     2
         memory:  "2 GB"
         disks:   "local-disk 100 HDD"
@@ -47,7 +50,7 @@ task ncbi_sftp_upload {
     }
 }
 
-task sra_tsv_to_xml {
+task sra_tsv_to_xml { # used
     input {
         File     meta_submit_tsv
         File     config_js
@@ -84,7 +87,7 @@ task sra_tsv_to_xml {
     }
 }
 
-task biosample_submit_tsv_to_xml {
+task biosample_submit_tsv_to_xml { # not used
     input {
         File     meta_submit_tsv
         File     config_js
@@ -119,12 +122,11 @@ task biosample_submit_tsv_to_xml {
     }
 }
 
-task biosample_submit_tsv_ftp_upload {
+task biosample_submit_tsv_ftp_upload { # used
     input {
         File     meta_submit_tsv
         File     config_js
         String   target_path
-        String   random_string
 
         String   docker = "quay.io/broadinstitute/ncbi-tools:2.10.7.10"
     }
@@ -133,8 +135,8 @@ task biosample_submit_tsv_ftp_upload {
         description: "This registers a table of metadata with NCBI BioSample. It accepts a TSV similar to the web UI input at submit.ncbi.nlm.nih.gov, but converts to an XML, submits via their FTP/XML API, awaits a response, and retrieves a resulting attributes table and returns that as a TSV. This task registers live data with the production NCBI database."
     }
     command <<<
-        # append current date to end of target_path with random string prefacing for testing
-        upload_path="~{target_path}/biosample/$(date -I)_~{random_string}"
+        # append current date to the second to end of target_path 
+        upload_path="~{target_path}/biosample/$(date +'%Y-%m-%d_%H-%M-%S')"
 
         set -e
         cd /opt/converter
@@ -145,12 +147,24 @@ task biosample_submit_tsv_ftp_upload {
             -i=$(basename "~{meta_submit_tsv}") \
             --uploadFolder="$upload_path" # target directory on FTP server
         cd -
-        cp /opt/converter/reports/~{base}-attributes.tsv /opt/converter/files/~{base}-submission.xml /opt/converter/reports/~{base}-report.*.xml .
+
+        # for if these exist, output these
+        cp /opt/converter/reports/~{base}-report.*.xml . # given back
+
+        # cat the report file to stdout
+        cat "#### REPORT XML FILES ####"
+        cat ~{base}-report.*.xml
+
+        # potential to parse this for biosample?
+
+        # test if one fails, and the others are good
+        cp /opt/converter/files/~{base}-submission.xml . # we upload
+        cp /opt/converter/reports/~{base}-attributes.tsv . # given back
     >>>
     output {
         File        attributes_tsv = "~{base}-attributes.tsv"
         File        submission_xml = "~{base}-submission.xml"
-        Array[File] reports_xmls   = glob("~{base}-report.*.xml")
+        Array[File] reports_xmls   = glob("~{base}-report*.xml")
     }
     runtime {
         cpu:     2
@@ -162,7 +176,7 @@ task biosample_submit_tsv_ftp_upload {
     }
 }
 
-task biosample_xml_response_to_tsv {
+task biosample_xml_response_to_tsv { # not used
     input {
         File     meta_submit_tsv
         File     ncbi_report_xml

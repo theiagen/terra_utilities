@@ -10,13 +10,14 @@ task prune_table {
     String biosample_type
     String bioproject
     String gcp_bucket_uri
+    Array[String]? biosample_accessions # if available
   }
   command <<<
     # when running on terra, comment out all input_table mentions
-    python3 /scripts/export_large_tsv/export_large_tsv.py --project ~{project_name} --workspace ~{workspace_name} --entity_type ~{table_name} --tsv_filename ~{table_name}-data.tsv
+    #python3 /scripts/export_large_tsv/export_large_tsv.py --project ~{project_name} --workspace ~{workspace_name} --entity_type ~{table_name} --tsv_filename ~{table_name}-data.tsv
     
     # when running locally, use the input_table in place of downloading from Terra
-    #cp ~{input_table} ~{table_name}-data.tsv
+    cp ~{input_table} ~{table_name}-data.tsv
 
     python3 <<CODE 
     import pandas as pd
@@ -31,10 +32,10 @@ task prune_table {
 
     # set required and optional metadata fields based on the biosample_type package
     if ("~{biosample_type}" == "Microbe") or ("~{biosample_type}" == "microbe"):
-      required_metadata = ["submission_id", "organism", "isolate", "collection_date", "geo_loc_name", "sample_type"]
+      required_metadata = ["submission_id", "organism", "collection_date", "geo_loc_name", "sample_type"]
       optional_metadata = ["strain", "isolate", "bioproject_accession", "attribute_package", "host", "isolation_source", "collected_by", "identified_by", "MLST"] # this will be easy to add to
       # add a column for biosample package -- required for XML submission
-      table["attribute_package"] = "Microbe"
+      table["attribute_package"] = "Microbe.1.0"
       # umbrella bioproject = PRJNA531911
       # subproject depends on organism
       # "CDC HAI-Seq Gram-negative bacteria (PRJNA288601) will be used for most AR LAb Network submissions related to HAIs"
@@ -45,10 +46,20 @@ task prune_table {
       #   similar GC content to expected genome
       #   assembled genome ratio ~1.0
       #   200 contigs or less
+
+    elif ("~{biosample_type}" == "Wastewater") or ("~{biosample_type}" == "wastewater"):
+      required_metadata = ["submission_id", "organism", "collection_date", "geo_loc_name", "isolation_source", "ww_population", "ww_sample_duration", "ww_sample_matrix", "ww_sample_type", "ww_surv_target_1", "ww_surv_target_1_known_presence"]
+      optional_metadata = ["sample_title", "bioproject_accession", "collected_by", "purpose_of_ww_sampling","purpose_of_ww_sequencing", "sequenced_by", "ww_endog_control_1", "ww_endog_control_1_conc", "ww_endog_control_1_protocol", "ww_endog_control_1_units", "ww_endog_control_2", "ww_endog_control_2_conc", "ww_endog_control_2_protocol", "ww_endog_control_2_units", "ww_flow", "ww_industrial_effluent_percent", "ww_ph", "ww_population_source", "ww_pre_treatment", "ww_primary_sludge_retention_time", "ww_processing_protocol", "ww_sample_salinity", "ww_sample_site", "ww_surv_jurisdiction", "ww_surv_system_sample_id", "ww_surv_target_1_conc", "ww_surv_target_1_conc_unit", "ww_surv_target_1_extract", "ww_surv_target_1_extract_unit", "ww_surv_target_1_gene", "ww_surv_target_1_protocol", "ww_surv_target_2", "ww_surv_target_2_conc", "ww_surv_target_2_conc_unit", "ww_surv_target_2_extract", "ww_surv_target_2_extract_unit", "ww_surv_target_2_gene", "ww_surv_target_2_known_present", "ww_surv_target_2_protocol", "ww_temperature", "ww_total_suspended_solids", "description"]
+
+      # add a column for biosample package -- required for XML submission
+      table["attribute_package"] = "SARS-CoV-2.wwsurv.1.0"
+
+      # qc checks:
+
    
     elif ("~{biosample_type}" == "Pathogen") or ("~{biosample_type}" == "pathogen"):
       required_metadata = ["submission_id", "organism", "collected_by", "collection_date", "geo_loc_name", "host", "host_disease", "isolation_source", "lat_lon", "isolation_type"]
-      optional_metadata = ["sample_title", "bioproject_accession", "attribute_package", "strain", "isolate", "culture_collection", "genotype",	"host_age",	"host_description",	"host_disease_outcome",	"host_disease_stage", "host_health_state",	"host_sex",	"host_subject_id",	"host_tissue_sampled",	"passage_history",	"pathotype",	"serotype",	"serovar",	"specimen_voucher",	"subgroup",	"subtype",	"description"] 
+      optional_metadata = ["sample_title", "bioproject_accession", "attribute_package", "strain", "isolate", "culture_collection", "genotype", "host_age", "host_description", "host_disease_outcome", "host_disease_stage", "host_health_state", "host_sex", "host_subject_id", "host_tissue_sampled", "passage_history", "pathotype", "serotype", "serovar", "specimen_voucher", "subgroup", "subtype", "description"] 
       # add a column for biosample package -- required for XML submission
       table["attribute_package"] = "Pathogen.cl"
       # umbrella bioproject = PRJNA642852
@@ -61,10 +72,10 @@ task prune_table {
       #  table = table[(table.mean_coverage_depth > 20)]
 
     else:
-      raise Exception('Only "Microbe" and "Pathogen" are supported as acceptable input for the \`biosample_type\` variable at this time. You entered ~{biosample_type}.')
+      raise Exception('Only "Microbe" and "Pathogen" and "Wastewater" are supported as acceptable input for the \`biosample_type\` variable at this time. You entered ~{biosample_type}.')
 
     # sra metadata is the same regardless of biosample_type package, but I'm separating it out in case we find out this is incorrect
-    sra_fields = ["submission_id", "library_ID", "title", "library_strategy", "library_source", "library_selection", "library_layout", "platform", "instrument_model", "design_description", "filetype", "read1", "read2"]
+    sra_fields = ["~{table_name}_id", "submission_id", "library_ID", "title", "library_strategy", "library_source", "library_selection", "library_layout", "platform", "instrument_model", "design_description", "filetype", "read1", "read2"] # make some of these optional; for when there is single-end data
     
     # combine all required fields into one array for easy removal of NaN cells
     required_fields = required_metadata + sra_fields
@@ -101,6 +112,12 @@ task prune_table {
     table["read1"].to_csv("filepaths.tsv", index=False, header=False)
     table["read2"].to_csv("filepaths.tsv", mode='a', index=False, header=False)
 
+    ## if biosample accession is provided, add to sra_metadata
+    # if biosample_accession !=""
+    # assumes all of the biosample accessions are there
+    # set output flag to skip the biosample submission step
+    # then just skips straight to SRA submission? 
+
     # write metadata tables to tsv output files
     biosample_metadata.to_csv("biosample_table.tsv", sep='\t', index=False)
     sra_metadata.to_csv("sra_table.tsv", sep='\t', index=False)
@@ -116,14 +133,11 @@ task prune_table {
     done < filepaths.tsv
     unset CLOUDSDK_PYTHON   # probably not necessary, but in case I do more things afterwards, this resets that env var
 
-    # to do: make md5sum here
-    echo $RANDOM | md5sum | head -c 10 | tee RANDOM_STRING
   >>>
   output {
     File biosample_table = "biosample_table.tsv"
     File sra_table = "sra_table.tsv"
     File excluded_samples = "excluded_samples.tsv"
-    String random_string = read_string("RANDOM_STRING")
   }
   runtime {
     docker: "broadinstitute/terra-tools:tqdm"
@@ -138,21 +152,47 @@ task add_biosample_accessions {
   input {
     File attributes
     File sra_metadata
+    String project_name
+    String workspace_name
+    String table_name
   }
   command <<<
+    echo "Uploading biosample_accession to the Terra data table"
+    # extract the table_id column from sra_metadata and the biosample accession from attributes and output to table
+    awk 'BEGIN {OFS="\t"} FNR==NR {a[$3]=$1; next} {print $1, a[$2]}' ~{attributes} ~{sra_metadata} > table-ids-and-biosamples.tsv
+    #  BEGIN {OFS="\t"} sets the output field separator to tab
+    #  FNR==NR is an if statement saying that you do the first command when true, and the second when false
+    #     this is false when attributes is finished being read and the sra_metadata file starts being read
+    #  {a[$3]=$1; next} creates and array where the 3rd column of attributes (sample_name) is the index 
+    #     and is set equal to column 1 (biosample accession)
+    #  {print $1, a[$2]} prints the table_id column and then the biosample_accession in the array that matches
+    #     the second column of sra_metadata (sample_name)
+
+    # echo out the header for the upload table
+    echo -e "entity:~{table_name}_id\tbiosample_accession" > upload-terra.tsv
+
+    # skip the header and append to new file
+    tail -n +1 table-id-biosamples.tsv >> upload-terra.tsv
+
+    # upload biosample_accessions to Terra
+    python3 /scripts/import_large_tsv/import_large_tsv.py --project ~{project_name} --workspace ~{workspace_name} --tsv upload-terra.tsv
+
+    echo "Adding biosample_accession to the sra_metadata table"
     # extract from the attributes file the biosample and original name columns
     # put the original name in column 1, biosample in column 2
     awk -F '\t' '{print $3, $1}' OFS='\t' ~{attributes} > biosample_temp.tsv
 
-    # echo out the header
-    echo -e "$(head -n 1 ~{sra_metadata})\tbiosample_accession" > "sra_table_with_biosample_accessions-with-sample-names.tsv"
+    # remove the table_id column
+    cut -f2- ~{sra_metadata} > sra_temp.tsv
+
+    # echo out the header for the updated sra_metadata file
+    echo -e "$(head -n 1 sra_temp.tsv)\tbiosample_accession" > "sra_table_with_biosample_accessions-with-sample-names.tsv"
 
     # join the biosample_temp with the sra_metadata; using tail to skip the header 
-    join -t $'\t' <(sort <(tail -n+2 ~{sra_metadata})) <(sort <(tail -n+2 biosample_temp.tsv)) >> "sra_table_with_biosample_accessions-with-sample-names.tsv"
+    join -t $'\t' <(sort <(tail -n+2 sra_temp.tsv)) <(sort <(tail -n+2 biosample_temp.tsv)) >> "sra_table_with_biosample_accessions-with-sample-names.tsv"
 
-    # remove the unnecessary submission_id column
+    # remove the unnecessary submission_id column 
     cut -f2- "sra_table_with_biosample_accessions-with-sample-names.tsv" > "sra_table_with_biosample_accessions.tsv"
-  
   >>>
   output {
     File sra_table = "sra_table_with_biosample_accessions.tsv"
