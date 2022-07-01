@@ -33,7 +33,7 @@ task ncbi_sftp_upload { # used6
         cd -
         cp /opt/converter/reports/*report.*.xml .
 
-        cat "#### REPORT XML FILES ####"
+        echo "#### REPORT XML FILES ####"
         cat *report.*.xml
 
     >>>
@@ -152,7 +152,7 @@ task biosample_submit_tsv_ftp_upload { # used
         cp /opt/converter/reports/~{base}-report.*.xml . # given back
 
         # cat the report file to stdout
-        cat "#### REPORT XML FILES ####"
+        echo "#### REPORT XML FILES ####"
         cat ~{base}-report.*.xml
 
         # potential to parse this for biosample?

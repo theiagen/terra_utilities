@@ -10,7 +10,8 @@ task prune_table {
     String biosample_type
     String bioproject
     String gcp_bucket_uri
-    #Array[String]? biosample_accessions # if available
+    String skip_biosample
+    # instead of providing them, maybe do a flag?
   }
   command <<<
     # when running on terra, comment out all input_table mentions
@@ -72,6 +73,10 @@ task prune_table {
     # sra metadata is the same regardless of biosample_type package, but I'm separating it out in case we find out this is incorrect
     sra_fields = ["~{table_name}_id", "submission_id", "library_ID", "title", "library_strategy", "library_source", "library_selection", "library_layout", "platform", "instrument_model", "design_description", "filetype", "read1", "read2"] # make some of these optional; for when there is single-end data
     
+    # if biosample accessions are provided, add those to the end of the sra_metadata field
+    if (~{skip_biosample} == "true") or (~{skip_biosample} == "True"):
+      sra_fields.append("biosample_accession")
+
     # combine all required fields into one array for easy removal of NaN cells
     required_fields = required_metadata + sra_fields
 
@@ -107,17 +112,14 @@ task prune_table {
     table["read1"].to_csv("filepaths.tsv", index=False, header=False)
     table["read2"].to_csv("filepaths.tsv", mode='a', index=False, header=False)
 
-    ## if biosample accession is provided, add to sra_metadata
-    # if biosample_accession !=""
-    # assumes all of the biosample accessions are there
-    # set output flag to skip the biosample submission step
-    # then just skips straight to SRA submission? 
-
     # write metadata tables to tsv output files
     biosample_metadata.to_csv("biosample_table.tsv", sep='\t', index=False)
-    sra_metadata.to_csv("sra_table.tsv", sep='\t', index=False)
+    sra_metadata.to_csv("sra_table_to_edit.tsv", sep='\t', index=False)
 
     CODE
+
+    # prune the first two columns of sra_table_to_edit to remove the tablename_id and submission_id columns
+    cut -f3- sra_table_to_edit.tsv > sra_table.tsv
 
     # copy the raw reads to the bucket specified by user
     export CLOUDSDK_PYTHON=python2.7  # ensure python 2.7 for gsutil commands
@@ -132,7 +134,9 @@ task prune_table {
   output {
     File biosample_table = "biosample_table.tsv"
     File sra_table = "sra_table.tsv"
+    File sra_table_for_biosample = "sra_table_to_edit.tsv"
     File excluded_samples = "excluded_samples.tsv"
+    String biosample_flag = read_string("FLAG")
   }
   runtime {
     docker: "broadinstitute/terra-tools:tqdm"

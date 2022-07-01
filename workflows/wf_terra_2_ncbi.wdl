@@ -9,7 +9,7 @@ workflow Terra_2_NCBI {
     String workspace_name
     String table_name
     Array[String] sample_names
-   # Array[String]? biosample_accessions
+    String skip_biosample = "false"
     File ncbi_config_js
     File? input_table
     String biosample_type
@@ -19,7 +19,6 @@ workflow Terra_2_NCBI {
   }
   call submission.prune_table {
     input:
-    # if they know biosample accession, 
       project_name = project_name,
       workspace_name = workspace_name,
       table_name = table_name,
@@ -28,25 +27,27 @@ workflow Terra_2_NCBI {
       biosample_type = biosample_type,
       bioproject = bioproject,
       gcp_bucket_uri = gcp_bucket_uri,
-    #  biosample_accessions = biosample_accessions
+      skip_biosample = skip_biosample
   }
-  call ncbi_tools.biosample_submit_tsv_ftp_upload {
-    input:
-      meta_submit_tsv = prune_table.biosample_table, 
-      config_js = ncbi_config_js, 
-      target_path = path_on_ftp_server
-  }
-  call submission.add_biosample_accessions {
-    input:
-      attributes = biosample_submit_tsv_ftp_upload.attributes_tsv,
-      sra_metadata = prune_table.sra_table,
-      project_name = project_name,
-      workspace_name = workspace_name,
-      table_name = table_name
+  if (skip_biosample == "false"){
+    call ncbi_tools.biosample_submit_tsv_ftp_upload {
+      input:
+        meta_submit_tsv = prune_table.biosample_table, 
+        config_js = ncbi_config_js, 
+        target_path = path_on_ftp_server
+    }
+    call submission.add_biosample_accessions {
+      input:
+        attributes = biosample_submit_tsv_ftp_upload.attributes_tsv,
+        sra_metadata = prune_table.sra_table_for_biosample,
+        project_name = project_name,
+        workspace_name = workspace_name,
+        table_name = table_name
+    }
   }
   call ncbi_tools.sra_tsv_to_xml {
     input:
-      meta_submit_tsv = add_biosample_accessions.sra_table,
+      meta_submit_tsv = select_first([add_biosample_accessions.sra_table, prune_table.sra_table]),
       config_js = ncbi_config_js,
       bioproject = bioproject,
       data_bucket_uri = gcp_bucket_uri
@@ -58,12 +59,12 @@ workflow Terra_2_NCBI {
       target_path = path_on_ftp_server
   }
   output {
-    File sra_metadata = add_biosample_accessions.sra_table
+    File sra_metadata = select_first([add_biosample_accessions.sra_table, prune_table.sra_table])
     File biosample_metadata = prune_table.biosample_table
     File excluded_samples = prune_table.excluded_samples
-    File attributes_tsv = biosample_submit_tsv_ftp_upload.attributes_tsv
-    File biosample_submission_xml = biosample_submit_tsv_ftp_upload.submission_xml
-    Array[File] biosample_report_xmls = biosample_submit_tsv_ftp_upload.reports_xmls
+    File? attributes_tsv = biosample_submit_tsv_ftp_upload.attributes_tsv
+    File? biosample_submission_xml = biosample_submit_tsv_ftp_upload.submission_xml
+    Array[File]? biosample_report_xmls = biosample_submit_tsv_ftp_upload.reports_xmls
     File sra_submission_xml = sra_tsv_to_xml.submission_xml
     Array[File] sra_report_xmls = ncbi_sftp_upload.reports_xmls
   }
