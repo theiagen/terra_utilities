@@ -9,7 +9,7 @@ workflow Terra_2_NCBI {
     String workspace_name
     String table_name
     Array[String] sample_names
-    Array[String]? biosample_accessions
+   # Array[String]? biosample_accessions
     File ncbi_config_js
     File? input_table
     String biosample_type
@@ -28,7 +28,7 @@ workflow Terra_2_NCBI {
       biosample_type = biosample_type,
       bioproject = bioproject,
       gcp_bucket_uri = gcp_bucket_uri,
-      biosample_accessions = biosample_accessions
+    #  biosample_accessions = biosample_accessions
   }
   call ncbi_tools.biosample_submit_tsv_ftp_upload {
     input:

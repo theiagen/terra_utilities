@@ -10,14 +10,14 @@ task prune_table {
     String biosample_type
     String bioproject
     String gcp_bucket_uri
-    Array[String]? biosample_accessions # if available
+    #Array[String]? biosample_accessions # if available
   }
   command <<<
     # when running on terra, comment out all input_table mentions
-    #python3 /scripts/export_large_tsv/export_large_tsv.py --project ~{project_name} --workspace ~{workspace_name} --entity_type ~{table_name} --tsv_filename ~{table_name}-data.tsv
+    python3 /scripts/export_large_tsv/export_large_tsv.py --project ~{project_name} --workspace ~{workspace_name} --entity_type ~{table_name} --tsv_filename ~{table_name}-data.tsv
     
     # when running locally, use the input_table in place of downloading from Terra
-    cp ~{input_table} ~{table_name}-data.tsv
+    #cp ~{input_table} ~{table_name}-data.tsv
 
     python3 <<CODE 
     import pandas as pd
@@ -36,10 +36,7 @@ task prune_table {
       optional_metadata = ["strain", "isolate", "bioproject_accession", "attribute_package", "host", "isolation_source", "collected_by", "identified_by", "MLST"] # this will be easy to add to
       # add a column for biosample package -- required for XML submission
       table["attribute_package"] = "Microbe.1.0"
-      # umbrella bioproject = PRJNA531911
-      # subproject depends on organism
-      # "CDC HAI-Seq Gram-negative bacteria (PRJNA288601) will be used for most AR LAb Network submissions related to HAIs"
-      # qc checks:
+      # future qc checks:
       #   q-score >= 30
       #   reads > 50 bp
       #   trailing/leading bases removed
@@ -50,7 +47,6 @@ task prune_table {
     elif ("~{biosample_type}" == "Wastewater") or ("~{biosample_type}" == "wastewater"):
       required_metadata = ["submission_id", "organism", "collection_date", "geo_loc_name", "isolation_source", "ww_population", "ww_sample_duration", "ww_sample_matrix", "ww_sample_type", "ww_surv_target_1", "ww_surv_target_1_known_presence"]
       optional_metadata = ["sample_title", "bioproject_accession", "collected_by", "purpose_of_ww_sampling","purpose_of_ww_sequencing", "sequenced_by", "ww_endog_control_1", "ww_endog_control_1_conc", "ww_endog_control_1_protocol", "ww_endog_control_1_units", "ww_endog_control_2", "ww_endog_control_2_conc", "ww_endog_control_2_protocol", "ww_endog_control_2_units", "ww_flow", "ww_industrial_effluent_percent", "ww_ph", "ww_population_source", "ww_pre_treatment", "ww_primary_sludge_retention_time", "ww_processing_protocol", "ww_sample_salinity", "ww_sample_site", "ww_surv_jurisdiction", "ww_surv_system_sample_id", "ww_surv_target_1_conc", "ww_surv_target_1_conc_unit", "ww_surv_target_1_extract", "ww_surv_target_1_extract_unit", "ww_surv_target_1_gene", "ww_surv_target_1_protocol", "ww_surv_target_2", "ww_surv_target_2_conc", "ww_surv_target_2_conc_unit", "ww_surv_target_2_extract", "ww_surv_target_2_extract_unit", "ww_surv_target_2_gene", "ww_surv_target_2_known_present", "ww_surv_target_2_protocol", "ww_temperature", "ww_total_suspended_solids", "description"]
-
       # add a column for biosample package -- required for XML submission
       table["attribute_package"] = "SARS-CoV-2.wwsurv.1.0"
 
@@ -62,8 +58,7 @@ task prune_table {
       optional_metadata = ["sample_title", "bioproject_accession", "attribute_package", "strain", "isolate", "culture_collection", "genotype", "host_age", "host_description", "host_disease_outcome", "host_disease_stage", "host_health_state", "host_sex", "host_subject_id", "host_tissue_sampled", "passage_history", "pathotype", "serotype", "serovar", "specimen_voucher", "subgroup", "subtype", "description"] 
       # add a column for biosample package -- required for XML submission
       table["attribute_package"] = "Pathogen.cl"
-      # umbrella bioproject = PRJNA642852
-      # qc checks:
+      # future qc checks:
       #   gc after trimming 42-47.5%
       #   average phred after trimming >= 28
      
