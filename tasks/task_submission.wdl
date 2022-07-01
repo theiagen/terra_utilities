@@ -136,7 +136,6 @@ task prune_table {
     File sra_table = "sra_table.tsv"
     File sra_table_for_biosample = "sra_table_to_edit.tsv"
     File excluded_samples = "excluded_samples.tsv"
-    String biosample_flag = read_string("FLAG")
   }
   runtime {
     docker: "broadinstitute/terra-tools:tqdm"
