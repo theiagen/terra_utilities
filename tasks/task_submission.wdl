@@ -170,7 +170,7 @@ task add_biosample_accessions {
     echo -e "entity:~{table_name}_id\tbiosample_accession" > upload-terra.tsv
 
     # skip the header and append to new file
-    tail -n +1 table-id-biosamples.tsv >> upload-terra.tsv
+    tail -n +1 table-ids-and-biosamples.tsv >> upload-terra.tsv
 
     # upload biosample_accessions to Terra
     python3 /scripts/import_large_tsv/import_large_tsv.py --project ~{project_name} --workspace ~{workspace_name} --tsv upload-terra.tsv
