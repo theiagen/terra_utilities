@@ -11,7 +11,6 @@ task prune_table {
     String bioproject
     String gcp_bucket_uri
     String skip_biosample
-    # instead of providing them, maybe do a flag?
   }
   command <<<
     # when running on terra, comment out all input_table mentions
@@ -34,7 +33,7 @@ task prune_table {
     # set required and optional metadata fields based on the biosample_type package
     if ("~{biosample_type}" == "Microbe") or ("~{biosample_type}" == "microbe"):
       required_metadata = ["submission_id", "organism", "collection_date", "geo_loc_name", "sample_type"]
-      optional_metadata = ["strain", "isolate", "bioproject_accession", "attribute_package", "host", "isolation_source", "collected_by", "identified_by", "MLST"] # this will be easy to add to
+      optional_metadata = ["sample_title", "bioproject_accession", "attribute_package", "strain", "isolate", "host", "isolation_source", "altitude", "biomaterial_provider", "collected_by", "depth", "env_broad_scale", "genotype", "host_tissue_sampled", "identified_by", "lab_host", "lat_lon", "mating_type", "passage_history", "samp_size", "serotype", "serovar", "specimen_voucher", "temp", "description", "MLST"]
       # add a column for biosample package -- required for XML submission
       table["attribute_package"] = "Microbe.1.0"
       # future qc checks:
