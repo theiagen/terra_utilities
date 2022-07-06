@@ -2,6 +2,7 @@ version 1.0
 
 import "../tasks/task_submission.wdl" as submission
 import "../tasks/task_broad_ncbi_tools.wdl" as ncbi_tools
+import "../tasks/task_versioning.wdl" as versioning
 
 workflow Terra_2_NCBI {
   input {
@@ -16,6 +17,9 @@ workflow Terra_2_NCBI {
     String gcp_bucket_uri
     String path_on_ftp_server
     String bioproject
+  }
+  call versioning.version_capture{
+    input:
   }
   call submission.prune_table {
     input:
@@ -59,13 +63,18 @@ workflow Terra_2_NCBI {
       target_path = path_on_ftp_server
   }
   output {
+    # Workflow produced files
     File sra_metadata = select_first([add_biosample_accessions.sra_table, prune_table.sra_table])
     File biosample_metadata = prune_table.biosample_table
     File excluded_samples = prune_table.excluded_samples
+    # NCBI produced files
     File? attributes_tsv = biosample_submit_tsv_ftp_upload.attributes_tsv
     File? biosample_submission_xml = biosample_submit_tsv_ftp_upload.submission_xml
     Array[File]? biosample_report_xmls = biosample_submit_tsv_ftp_upload.reports_xmls
     File sra_submission_xml = sra_tsv_to_xml.submission_xml
     Array[File] sra_report_xmls = ncbi_sftp_upload.reports_xmls
+    # Versioning
+    String Terra_2_NCBI_version = version_capture.terra_utilities_version
+    String Terra_2_NCBI_analysis_date = version_capture.date
   }
 }

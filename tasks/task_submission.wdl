@@ -14,7 +14,7 @@ task prune_table {
   }
   command <<<
     # when running on terra, comment out all input_table mentions
-    python3 /scripts/export_large_tsv/export_large_tsv.py --project ~{project_name} --workspace ~{workspace_name} --entity_type ~{table_name} --tsv_filename ~{table_name}-data.tsv
+    python3 /scripts/export_large_tsv/export_large_tsv.py --project "~{project_name}" --workspace "~{workspace_name}" --entity_type ~{table_name} --tsv_filename ~{table_name}-data.tsv
     
     # when running locally, use the input_table in place of downloading from Terra
     #cp ~{input_table} ~{table_name}-data.tsv
@@ -172,7 +172,7 @@ task add_biosample_accessions {
     tail -n +1 table-ids-and-biosamples.tsv >> upload-terra.tsv
 
     # upload biosample_accessions to Terra
-    python3 /scripts/import_large_tsv/import_large_tsv.py --project ~{project_name} --workspace ~{workspace_name} --tsv upload-terra.tsv
+    python3 /scripts/import_large_tsv/import_large_tsv.py --project "~{project_name}" --workspace "~{workspace_name}" --tsv upload-terra.tsv
 
     echo "Adding biosample_accession to the sra_metadata table"
     # extract from the attributes file the biosample and original name columns
