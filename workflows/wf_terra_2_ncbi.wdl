@@ -10,7 +10,7 @@ workflow Terra_2_NCBI {
     String workspace_name
     String table_name
     Array[String] sample_names
-    String skip_biosample = "false"
+    Boolean skip_biosample = false 
     File ncbi_config_js
     File? input_table
     String biosample_type
@@ -33,7 +33,7 @@ workflow Terra_2_NCBI {
       gcp_bucket_uri = gcp_bucket_uri,
       skip_biosample = skip_biosample
   }
-  if (skip_biosample == "false"){
+  if (skip_biosample == false){
     call ncbi_tools.biosample_submit_tsv_ftp_upload {
       input:
         meta_submit_tsv = prune_table.biosample_table, 
