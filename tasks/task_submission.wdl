@@ -10,7 +10,7 @@ task prune_table {
     String biosample_type
     String bioproject
     String gcp_bucket_uri
-    Boolean skip_biosample
+    String skip_biosample
   }
   command <<<
     # when running on terra, comment out all input_table mentions
@@ -73,7 +73,7 @@ task prune_table {
     sra_fields = ["~{table_name}_id", "submission_id", "library_ID", "title", "library_strategy", "library_source", "library_selection", "library_layout", "platform", "instrument_model", "design_description", "filetype", "read1", "read2"] # make some of these optional; for when there is single-end data
     
     # if biosample accessions are provided, add those to the end of the sra_metadata field
-    if (~{skip_biosample} == true):
+    if ("~{skip_biosample}" == "true" || "~{skip_biosample}" == "True"):
       sra_fields.append("biosample_accession")
 
     # combine all required fields into one array for easy removal of NaN cells
