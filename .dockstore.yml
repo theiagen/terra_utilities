@@ -40,3 +40,8 @@ workflows:
    primaryDescriptorPath: /workflows/wf_transfer_column.wdl
    testParameterFiles:
     - empty.json
+ - name: SRA_Fetch
+   subclass: WDL
+   primaryDescriptorPath: /workflows/wf_sra_fetch.wdl
+   testParameterFiles:
+    - empty.json
