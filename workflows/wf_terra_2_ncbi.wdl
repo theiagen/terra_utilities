@@ -42,7 +42,7 @@ workflow Terra_2_NCBI {
     }
     call submission.add_biosample_accessions {
       input:
-        attributes = biosample_submit_tsv_ftp_upload.attributes_tsv,
+        generated_accessions = biosample_submit_tsv_ftp_upload.generated_accessions,
         sra_metadata = prune_table.sra_table_for_biosample,
         project_name = project_name,
         workspace_name = workspace_name,
@@ -67,10 +67,11 @@ workflow Terra_2_NCBI {
     File sra_metadata = select_first([add_biosample_accessions.sra_table, prune_table.sra_table])
     File biosample_metadata = prune_table.biosample_table
     File excluded_samples = prune_table.excluded_samples
+    File? generated_accessions = biosample_submit_tsv_ftp_upload.generated_accessions
+    File? biosample_failures = biosample_submit_tsv_ftp_upload.biosample_failures
     # NCBI produced files
-    File? attributes_tsv = biosample_submit_tsv_ftp_upload.attributes_tsv
     File? biosample_submission_xml = biosample_submit_tsv_ftp_upload.submission_xml
-    Array[File]? biosample_report_xmls = biosample_submit_tsv_ftp_upload.reports_xmls
+    Array[File]? biosample_report_xmls = biosample_submit_tsv_ftp_upload.report_xmls
     File sra_submission_xml = sra_tsv_to_xml.submission_xml
     Array[File] sra_report_xmls = ncbi_sftp_upload.reports_xmls
     # Versioning

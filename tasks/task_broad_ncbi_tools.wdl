@@ -10,7 +10,14 @@ task ncbi_sftp_upload {
     String wait_for="1"  # all, disabled, some number
   }
   command <<<
-    upload_path="~{target_path}/sra/$(date +'%Y-%m-%d_%H-%M-%S')"
+    # append current date to the second to end of target_path 
+    if [ ~{target_path} == "production" || ~{target_path} == "Production" ]; then
+      path="Production"
+    else # if they don't put in production, it will default to Test
+      path="Test"
+    fi
+
+    upload_path="submit/${path}/sra/$(date +'%Y-%m-%d_%H-%M-%S')"
 
     set -e
     cd /opt/converter
@@ -38,21 +45,21 @@ task ncbi_sftp_upload {
     Array[File] reports_xmls = glob("*report*.xml")
   }
   runtime { 
-    cpu:     2
-    memory:  "2 GB"
-    disks:   "local-disk 100 HDD"
+    cpu: 2
+    memory: "2 GB"
+    disks: "local-disk 100 HDD"
     dx_instance_type: "mem2_ssd1_v2_x2"
-    docker:  "quay.io/broadinstitute/ncbi-tools:2.10.7.10"
+    docker: "quay.io/broadinstitute/ncbi-tools:2.10.7.10"
     maxRetries: 0
   }
 }
 
 task sra_tsv_to_xml { 
   input {
-    File     meta_submit_tsv
-    File     config_js
-    String   bioproject
-    String   data_bucket_uri
+    File meta_submit_tsv
+    File config_js
+    String bioproject
+    String data_bucket_uri
   }
   command <<<
     set -e
@@ -70,23 +77,23 @@ task sra_tsv_to_xml {
     cp "/opt/converter/files/~{basename(meta_submit_tsv, '.tsv')}-submission.xml" .
   >>>
   output {
-    File   submission_xml = "~{basename(meta_submit_tsv, '.tsv')}-submission.xml"
+    File submission_xml = "~{basename(meta_submit_tsv, '.tsv')}-submission.xml"
   }
   runtime {
-    cpu:     1
-    memory:  "2 GB"
-    disks:   "local-disk 50 HDD"
+    cpu: 1
+    memory: "2 GB"
+    disks: "local-disk 50 HDD"
     dx_instance_type: "mem2_ssd1_v2_x2"
-    docker:  "quay.io/broadinstitute/ncbi-tools:2.10.7.10"
+    docker: "quay.io/broadinstitute/ncbi-tools:2.10.7.10"
     maxRetries: 2
   }
 }
 
 task biosample_submit_tsv_ftp_upload { 
   input {
-    File     meta_submit_tsv
-    File     config_js
-    String   target_path
+    File meta_submit_tsv
+    File config_js
+    String target_path
   }
   String base=basename(meta_submit_tsv, '.tsv')
   meta {
@@ -94,7 +101,14 @@ task biosample_submit_tsv_ftp_upload {
   }
   command <<<
     # append current date to the second to end of target_path 
-    upload_path="~{target_path}/biosample/$(date +'%Y-%m-%d_%H-%M-%S')"
+    if [ ~{target_path} == "production" || ~{target_path} == "Production" ]; then
+      path="Production"
+    else # if they don't put in production, it will default to Test
+      path="Test"
+    fi
+
+    upload_path="submit/${path}/biosample/$(date +'%Y-%m-%d_%H-%M-%S')"
+
 
     set -e
     cd /opt/converter
@@ -113,23 +127,33 @@ task biosample_submit_tsv_ftp_upload {
     echo "#### REPORT XML FILES ####"
     cat ~{base}-report.*.xml
 
-    # potential to parse this for biosample?
+    # parse final report.xml for any generated biosample accessions
+    grep "accession=" report.xml | cut -d ' ' -f12-13 | sed 's/accession="//' | sed 's/" spuid="/\t/' | sed 's/"//' > generated_accessions.tsv
 
-    # test if one fails, and the others are good
-    cp /opt/converter/files/~{base}-submission.xml . # we upload
-    cp /opt/converter/reports/~{base}-attributes.tsv . # given back
+    # extract any "error-stop" messages and their spuids, reasons, and invalid attribute
+    # this -A 4 means that it grabs the next 4 lines after the match; may need to be adjusted in the future
+    grep -A 4 "error-stop" report.xml  > biosample_failures.txt
+
+    cp /opt/converter/files/~{base}-submission.xml . # we upload -- should always be produced.
+
+    ## test this to make sure task doesn't fail if not produced.
+    if [ -f /opt/converted/reports/~{base}-attributes.tsv ]; then
+      cp /opt/converter/reports/~{base}-attributes.tsv . # given back -- make this optional
+    fi
   >>>
   output {
-    File        attributes_tsv = "~{base}-attributes.tsv"
-    File        submission_xml = "~{base}-submission.xml"
-    Array[File] reports_xmls   = glob("~{base}-report*.xml")
+    File generated_accessions = "generated-accessions.tsv"
+    File biosample_failures = "biosample_failures.txt"
+    File submission_xml = "~{base}-submission.xml"
+    File? biosample_attributes = "~{base}_attributes.tsv"
+    Array[File] report_xmls   = glob("~{base}-report*.xml")
   }
   runtime {
-    cpu:     2
-    memory:  "2 GB"
-    disks:   "local-disk 100 HDD"
+    cpu: 2
+    memory: "2 GB"
+    disks: "local-disk 100 HDD"
     dx_instance_type: "mem2_ssd1_v2_x2"
-    docker:  "quay.io/broadinstitute/ncbi-tools:2.10.7.10"
+    docker: "quay.io/broadinstitute/ncbi-tools:2.10.7.10"
     maxRetries: 0
   }
 }
