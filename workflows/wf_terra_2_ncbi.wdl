@@ -49,18 +49,20 @@ workflow Terra_2_NCBI {
         table_name = table_name
     }
   }
-  call ncbi_tools.sra_tsv_to_xml {
-    input:
-      meta_submit_tsv = select_first([add_biosample_accessions.sra_table, prune_table.sra_table]),
-      config_js = ncbi_config_js,
-      bioproject = bioproject,
-      data_bucket_uri = gcp_bucket_uri
-  }
-  call ncbi_tools.ncbi_sftp_upload {
-    input: 
-      submission_xml = sra_tsv_to_xml.submission_xml,
-      config_js = ncbi_config_js,
-      target_path = path_on_ftp_server
+  if (select_first([add_biosample_accessions.proceed, true]) == true) {
+    call ncbi_tools.sra_tsv_to_xml {
+      input:
+        meta_submit_tsv = select_first([add_biosample_accessions.sra_table, prune_table.sra_table]),
+        config_js = ncbi_config_js,
+        bioproject = bioproject,
+        data_bucket_uri = gcp_bucket_uri
+    }
+    call ncbi_tools.ncbi_sftp_upload {
+      input: 
+        submission_xml = sra_tsv_to_xml.submission_xml,
+        config_js = ncbi_config_js,
+        target_path = path_on_ftp_server
+    }
   }
   output {
     # Workflow produced files
@@ -72,8 +74,8 @@ workflow Terra_2_NCBI {
     # NCBI produced files
     File? biosample_submission_xml = biosample_submit_tsv_ftp_upload.submission_xml
     Array[File]? biosample_report_xmls = biosample_submit_tsv_ftp_upload.report_xmls
-    File sra_submission_xml = sra_tsv_to_xml.submission_xml
-    Array[File] sra_report_xmls = ncbi_sftp_upload.reports_xmls
+    File? sra_submission_xml = sra_tsv_to_xml.submission_xml
+    Array[File]? sra_report_xmls = ncbi_sftp_upload.reports_xmls
     # Versioning
     String Terra_2_NCBI_version = version_capture.terra_utilities_version
     String Terra_2_NCBI_analysis_date = version_capture.date

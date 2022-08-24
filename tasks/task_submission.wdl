@@ -14,10 +14,10 @@ task prune_table {
   }
   command <<<
     # when running on terra, comment out all input_table mentions
-    python3 /scripts/export_large_tsv/export_large_tsv.py --project "~{project_name}" --workspace "~{workspace_name}" --entity_type ~{table_name} --tsv_filename ~{table_name}-data.tsv
+    #python3 /scripts/export_large_tsv/export_large_tsv.py --project "~{project_name}" --workspace "~{workspace_name}" --entity_type ~{table_name} --tsv_filename ~{table_name}-data.tsv
     
     # when running locally, use the input_table in place of downloading from Terra
-    #cp ~{input_table} ~{table_name}-data.tsv
+    cp ~{input_table} ~{table_name}-data.tsv
 
     python3 <<CODE 
     import pandas as pd
@@ -162,6 +162,14 @@ task add_biosample_accessions {
   }
   command <<<
     echo "Uploading biosample_accession to the Terra data table"
+
+    ## check if any biosample accessions were made 
+    if [ -s ~{generated_accessions} ]; then
+      echo true > PROCEED
+    else
+      echo false > PROCEED
+    fi
+
     # extract the table_id column from sra_metadata and the biosample accession from attributes and output to table
     awk 'BEGIN {OFS="\t"} FNR==NR {a[$2]=$1; next} {print $1, a[$2]}' ~{generated_accessions} ~{sra_metadata} > table-ids-and-biosamples.tsv
     #  BEGIN {OFS="\t"} sets the output field separator to tab
@@ -193,6 +201,7 @@ task add_biosample_accessions {
     echo -e "$(head -n 1 sra_temp.tsv)\tbiosample_accession" > "sra_table_with_biosample_accessions-with-sample-names.tsv"
 
     # join the biosample_temp with the sra_metadata; using tail to skip the header 
+    # this join will remove any sra numbers do not have biosample accessions
     join -t $'\t' <(sort <(tail -n+2 sra_temp.tsv)) <(sort <(tail -n+2 biosample_temp.tsv)) >> "sra_table_with_biosample_accessions-with-sample-names.tsv"
 
     # remove the unnecessary submission_id column 
@@ -200,6 +209,7 @@ task add_biosample_accessions {
   >>>
   output {
     File sra_table = "sra_table_with_biosample_accessions.tsv"
+    Boolean proceed = read_boolean("PROCEED")
   }
   runtime {
     docker: "broadinstitute/terra-tools:tqdm"

@@ -11,7 +11,7 @@ task ncbi_sftp_upload {
   }
   command <<<
     # append current date to the second to end of target_path 
-    if [ ~{target_path} == "production" || ~{target_path} == "Production" ]; then
+    if [ ~"{target_path}" == "production" ] || [ "~{target_path}" == "Production" ]; then
       path="Production"
     else # if they don't put in production, it will default to Test
       path="Test"
@@ -101,7 +101,7 @@ task biosample_submit_tsv_ftp_upload {
   }
   command <<<
     # append current date to the second to end of target_path 
-    if [ ~{target_path} == "production" || ~{target_path} == "Production" ]; then
+    if [ ~"{target_path}" == "production" ] || [ "~{target_path}" == "Production" ]; then
       path="Production"
     else # if they don't put in production, it will default to Test
       path="Test"
@@ -128,11 +128,15 @@ task biosample_submit_tsv_ftp_upload {
     cat ~{base}-report.*.xml
 
     # parse final report.xml for any generated biosample accessions
-    grep "accession=" report.xml | cut -d ' ' -f12-13 | sed 's/accession="//' | sed 's/" spuid="/\t/' | sed 's/"//' > generated_accessions.tsv
+    echo -e "biosample_accession\tsample_name" > generated_accessions-potential-duplicates.tsv
+    grep "accession=" ~{base}-report.*.xml | cut -d ' ' -f12-13 | sed 's/accession="//' | sed 's/" spuid="/\t/' | sed 's/"//' >> generated_accessions-potential-duplicates.tsv
+
+    # remove duplicates if any present (depends on which report.xml files are present)
+    sort -u generated_accessions-potential-duplicates.tsv > generated_accessions.tsv 
 
     # extract any "error-stop" messages and their spuids, reasons, and invalid attribute
     # this -A 4 means that it grabs the next 4 lines after the match; may need to be adjusted in the future
-    grep -A 4 "error-stop" report.xml  > biosample_failures.txt
+    grep -A 4 "error-stop" ~{base}-report.*.xml  > biosample_failures.txt
 
     cp /opt/converter/files/~{base}-submission.xml . # we upload -- should always be produced.
 
@@ -142,7 +146,7 @@ task biosample_submit_tsv_ftp_upload {
     fi
   >>>
   output {
-    File generated_accessions = "generated-accessions.tsv"
+    File generated_accessions = "generated_accessions.tsv"
     File biosample_failures = "biosample_failures.txt"
     File submission_xml = "~{base}-submission.xml"
     File? biosample_attributes = "~{base}_attributes.tsv"
