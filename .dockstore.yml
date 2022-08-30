@@ -45,3 +45,8 @@ workflows:
    primaryDescriptorPath: /workflows/wf_terra_2_ncbi.wdl
    testParameterFiles:
     - empty.json
+ - name: SRA_Fetch
+   subclass: WDL
+   primaryDescriptorPath: /workflows/wf_sra_fetch.wdl
+   testParameterFiles:
+    - empty.json
