@@ -10,18 +10,26 @@ task prune_table {
     String biosample_type
     String bioproject
     String gcp_bucket_uri
-    String skip_biosample
+    Boolean skip_biosample
   }
   command <<<
     # when running on terra, comment out all input_table mentions
-    python3 /scripts/export_large_tsv/export_large_tsv.py --project "~{project_name}" --workspace "~{workspace_name}" --entity_type ~{table_name} --tsv_filename ~{table_name}-data.tsv
+    #python3 /scripts/export_large_tsv/export_large_tsv.py --project "~{project_name}" --workspace "~{workspace_name}" --entity_type ~{table_name} --tsv_filename ~{table_name}-data.tsv
     
     # when running locally, use the input_table in place of downloading from Terra
-    #cp ~{input_table} ~{table_name}-data.tsv
+    cp ~{input_table} ~{table_name}-data.tsv
+
+    # transform boolean skip_biosample into string for python comparison
+    if ~{skip_biosample}; then
+      export skip_bio="true"
+    else 
+      export skip_bio="false"
+    fi
 
     python3 <<CODE 
     import pandas as pd
     import numpy as np
+    import os
 
     # read export table into pandas
     tablename = "~{table_name}-data.tsv"
@@ -74,13 +82,13 @@ task prune_table {
 
 
     else:
-      raise Exception('Only "Microbe" and "Pathogen" and "Wastewater" are supported as acceptable input for the \`biosample_type\` variable at this time. You entered ~{biosample_type}.')
+      raise Exception('Only "Microbe", "Virus", "Pathogen" and "Wastewater" are supported as acceptable input for the \`biosample_type\` variable at this time. You entered ~{biosample_type}.')
 
     # sra metadata is the same regardless of biosample_type package, but I'm separating it out in case we find out this is incorrect
     sra_fields = ["~{table_name}_id", "submission_id", "library_ID", "title", "library_strategy", "library_source", "library_selection", "library_layout", "platform", "instrument_model", "design_description", "filetype", "read1", "read2"] # make some of these optional; for when there is single-end data
     
     # if biosample accessions are provided, add those to the end of the sra_metadata field
-    if ("~{skip_biosample}" == "true") or ("~{skip_biosample}" == "True"):
+    if (os.environ["skip_bio"] == "true"):
       sra_fields.append("biosample_accession")
 
     # combine all required fields into one array for easy removal of NaN cells
@@ -106,7 +114,6 @@ task prune_table {
 
     # extract the required metadata from the table; rename first column 
     sra_metadata = table[sra_fields].copy()
-    #sra_metadata.rename(columns={"submission_id" : "sample_id"}, inplace=True)
     sra_metadata.rename(columns={"submission_id" : "sample_name"}, inplace=True)
 
     # prettify the filenames and rename them to be sra compatible
