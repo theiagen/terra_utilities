@@ -171,7 +171,8 @@ task add_biosample_accessions {
     echo "Uploading biosample_accession to the Terra data table"
 
     ## check if any biosample accessions were made 
-    if [ -s ~{generated_accessions} ]; then
+    tail -n +2 ~{generated_accessions} > removed_header
+    if [ -s removed_header ]; then
       echo true > PROCEED
     else
       echo false > PROCEED
