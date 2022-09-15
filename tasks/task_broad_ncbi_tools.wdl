@@ -138,7 +138,9 @@ task biosample_submit_tsv_ftp_upload {
     # this -A 4 means that it grabs the next 4 lines after the match; may need to be adjusted in the future
     grep -A 4 "error-stop" ~{base}-report.*.xml  > biosample_failures.txt
 
-    cp -v /opt/converter/files/*submission.xml ./~{base}-submission.xml # we upload -- should always be produced.
+    if [ -f /opt/converted/files/~{base}-submission.xml ]; then # avoid failures???
+      cp -v /opt/converter/files/*submission.xml ./~{base}-submission.xml # we upload -- should always be produced.
+    fi
 
     ## test this to make sure task doesn't fail if not produced.
     if [ -f /opt/converted/reports/~{base}-attributes.tsv ]; then
