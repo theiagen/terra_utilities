@@ -71,6 +71,7 @@ workflow Terra_2_NCBI {
     File excluded_samples = prune_table.excluded_samples
     File? generated_accessions = biosample_submit_tsv_ftp_upload.generated_accessions
     File? biosample_failures = biosample_submit_tsv_ftp_upload.biosample_failures
+    String? biosample_status = add_biosample_accessions.biosample_status
     # NCBI produced files
     File? biosample_submission_xml = biosample_submit_tsv_ftp_upload.submission_xml
     Array[File]? biosample_report_xmls = biosample_submit_tsv_ftp_upload.report_xmls

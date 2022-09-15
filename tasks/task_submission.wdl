@@ -174,49 +174,56 @@ task add_biosample_accessions {
     tail -n +2 ~{generated_accessions} > removed_header
     if [ -s removed_header ]; then
       echo true > PROCEED
-    else
+      echo "Biosample accessions were generated! Proceeding to SRA submission" > BIOSAMPLE_STATUS
+      
+      # add biosample accessions to sra_metadata table:
+
+      # extract the table_id column from sra_metadata and the biosample accession from attributes and output to table
+      awk 'BEGIN {OFS="\t"} FNR==NR {a[$2]=$1; next} {print $1, a[$2]}' ~{generated_accessions} ~{sra_metadata} > table-ids-and-biosamples.tsv
+      #  BEGIN {OFS="\t"} sets the output field separator to tab
+      #  FNR==NR is an if statement saying that you do the first command when true, and the second when false
+      #     this is false when attributes is finished being read and the sra_metadata file starts being read
+      #  {a[$2]=$1; next} creates and array where the 2nd column of generated_accessions (sample_name) is the index 
+      #     and is set equal to column 1 (biosample accession)
+      #  {print $1, a[$2]} prints the table_id column and then the biosample_accession in the array that matches
+      #     the second column of sra_metadata (sample_name)
+
+      # echo out the header for the upload table
+      echo -e "entity:~{table_name}_id\tbiosample_accession" > upload-terra.tsv
+
+      # skip the header and append to new file
+      tail -n +2 table-ids-and-biosamples.tsv >> upload-terra.tsv
+
+      # upload biosample_accessions to Terra
+      python3 /scripts/import_large_tsv/import_large_tsv.py --project "~{project_name}" --workspace "~{workspace_name}" --tsv upload-terra.tsv
+
+      echo "Adding biosample_accession to the sra_metadata table"
+      # extract from the attributes file the biosample and original name columns
+      # put the original name in column 1, biosample in column 2
+      awk -F '\t' '{print $2, $1}' OFS='\t' ~{generated_accessions} > biosample_temp.tsv
+
+      # remove the table_id column
+      cut -f2- ~{sra_metadata} > sra_temp.tsv
+
+      # echo out the header for the updated sra_metadata file
+      echo -e "$(head -n 1 sra_temp.tsv)\tbiosample_accession" > "sra_table_with_biosample_accessions-with-sample-names.tsv"
+
+      # join the biosample_temp with the sra_metadata; using tail to skip the header 
+      # this join will remove any sra numbers do not have biosample accessions
+      join -t $'\t' <(sort <(tail -n+2 sra_temp.tsv)) <(sort <(tail -n+2 biosample_temp.tsv)) >> "sra_table_with_biosample_accessions-with-sample-names.tsv"
+
+      # remove the unnecessary submission_id column 
+      cut -f2- "sra_table_with_biosample_accessions-with-sample-names.tsv" > "sra_table_with_biosample_accessions.tsv"
+
+    else # no biosample_accessions generated
       echo false > PROCEED
+      echo "Biosample accessions were NOT generated! Ending process now" > BIOSAMPLE_STATUS
     fi
 
-    # extract the table_id column from sra_metadata and the biosample accession from attributes and output to table
-    awk 'BEGIN {OFS="\t"} FNR==NR {a[$2]=$1; next} {print $1, a[$2]}' ~{generated_accessions} ~{sra_metadata} > table-ids-and-biosamples.tsv
-    #  BEGIN {OFS="\t"} sets the output field separator to tab
-    #  FNR==NR is an if statement saying that you do the first command when true, and the second when false
-    #     this is false when attributes is finished being read and the sra_metadata file starts being read
-    #  {a[$2]=$1; next} creates and array where the 2nd column of generated_accessions (sample_name) is the index 
-    #     and is set equal to column 1 (biosample accession)
-    #  {print $1, a[$2]} prints the table_id column and then the biosample_accession in the array that matches
-    #     the second column of sra_metadata (sample_name)
-
-    # echo out the header for the upload table
-    echo -e "entity:~{table_name}_id\tbiosample_accession" > upload-terra.tsv
-
-    # skip the header and append to new file
-    tail -n +2 table-ids-and-biosamples.tsv >> upload-terra.tsv
-
-    # upload biosample_accessions to Terra
-    python3 /scripts/import_large_tsv/import_large_tsv.py --project "~{project_name}" --workspace "~{workspace_name}" --tsv upload-terra.tsv
-
-    echo "Adding biosample_accession to the sra_metadata table"
-    # extract from the attributes file the biosample and original name columns
-    # put the original name in column 1, biosample in column 2
-    awk -F '\t' '{print $2, $1}' OFS='\t' ~{generated_accessions} > biosample_temp.tsv
-
-    # remove the table_id column
-    cut -f2- ~{sra_metadata} > sra_temp.tsv
-
-    # echo out the header for the updated sra_metadata file
-    echo -e "$(head -n 1 sra_temp.tsv)\tbiosample_accession" > "sra_table_with_biosample_accessions-with-sample-names.tsv"
-
-    # join the biosample_temp with the sra_metadata; using tail to skip the header 
-    # this join will remove any sra numbers do not have biosample accessions
-    join -t $'\t' <(sort <(tail -n+2 sra_temp.tsv)) <(sort <(tail -n+2 biosample_temp.tsv)) >> "sra_table_with_biosample_accessions-with-sample-names.tsv"
-
-    # remove the unnecessary submission_id column 
-    cut -f2- "sra_table_with_biosample_accessions-with-sample-names.tsv" > "sra_table_with_biosample_accessions.tsv"
   >>>
   output {
-    File sra_table = "sra_table_with_biosample_accessions.tsv"
+    File? sra_table = "sra_table_with_biosample_accessions.tsv"
+    String biosample_status = read_string("BIOSAMPLE_STATUS")
     Boolean proceed = read_boolean("PROCEED")
   }
   runtime {
