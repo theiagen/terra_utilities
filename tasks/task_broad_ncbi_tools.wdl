@@ -109,7 +109,6 @@ task biosample_submit_tsv_ftp_upload {
 
     upload_path="submit/${path}/biosample/$(date +'%Y-%m-%d_%H-%M-%S')"
 
-
     set -e
     cd /opt/converter
     cp "~{config_js}" src/config.js
@@ -126,6 +125,7 @@ task biosample_submit_tsv_ftp_upload {
     # cat the report file to stdout
     echo "#### REPORT XML FILES ####"
     cat ~{base}-report.*.xml
+    echo "#### END REPORT XML FILE ####"
 
     # parse final report.xml for any generated biosample accessions
     echo -e "biosample_accession\tsample_name" > generated_accessions-potential-duplicates.tsv
@@ -136,9 +136,10 @@ task biosample_submit_tsv_ftp_upload {
 
     # extract any "error-stop" messages and their spuids, reasons, and invalid attribute
     # this -A 4 means that it grabs the next 4 lines after the match; may need to be adjusted in the future
-    grep -A 4 "error-stop" ~{base}-report.*.xml  > biosample_failures.txt
-
-    if [ -f /opt/converted/files/~{base}-submission.xml ]; then # avoid failures???
+    # if no error-stop, will exit code 1 :( so we will reset error code with an echo that will succeed.
+    grep -A 4 "error-stop" ~{base}-report.*.xml  > biosample_failures.txt || echo "reset exit code in case of failure"
+    
+    if [ -f /opt/converter/files/~{base}-submission.xml ]; then # avoid failures???
       cp -v /opt/converter/files/*submission.xml ./~{base}-submission.xml # we upload -- should always be produced.
     fi
 
