@@ -102,7 +102,7 @@ task terra_to_bigquery {
   print("out_fname: " + out_fname)
 
   # Grabbbing defined table using firecloud api and reading data to to python dictionary
-  table = json.loads(fapi.get_entities(workspace_project, workspace_name, table_name).text)
+  table = json.loads(fapi.get_entities_query(workspace_project, workspace_name, table_name, page=1, page_size=300272, sort_direction="asc", filter_terms=None).text)
   headers = collections.OrderedDict()
   rows = []
   headers[table_name + "_id"] = 0
