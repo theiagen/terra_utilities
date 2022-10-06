@@ -193,6 +193,8 @@ task terra_to_bigquery {
         outfile.write('"notes":""}'+'\n')
   CODE
 
+      export CLOUDSDK_PYTHON=python2.7  # ensure python 2.7 for gsutil commands
+
       # add date tag when transferring file to gcp
       #### date_tag variable is already set above the python block, so commenting out ###
       #date_tag=$(date +"%Y-%m-%d-%Hh-%Mm-%Ss")
@@ -200,7 +202,9 @@ task terra_to_bigquery {
       # copy new line JSON to bucket & copy re-formatted TSV (for testing purposes)
       gsutil -m cp "${table_id}.json" "~{gcs_uri_prefix}"
       gsutil -m cp "${out_fname}.tsv" "~{gcs_uri_prefix}"
-      echo "${table_id}_${date_tag}.json copied to ~{gcs_uri_prefix} (${date_tag})"
+      echo "${table_id}.json copied to ~{gcs_uri_prefix}"
+
+      unset CLOUDSDK_PYTHON   # probably not necessary, but in case I do more things afterwards, this resets that env var
     done
 
     sleep ~{sleep_time}
