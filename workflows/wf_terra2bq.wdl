@@ -196,7 +196,10 @@ task terra_to_bigquery {
       # add date tag when transferring file to gcp
       #### date_tag variable is already set above the python block, so commenting out ###
       #date_tag=$(date +"%Y-%m-%d-%Hh-%Mm-%Ss")
-      gsutil -m cp "${table_id}.json" "~{gcs_uri_prefix}${table_id}_${date_tag}.json"
+
+      # copy new line JSON to bucket & copy re-formatted TSV (for testing purposes)
+      gsutil -m cp "${table_id}.json" "~{gcs_uri_prefix}"
+      gsutil -m cp "${out_fname}.tsv" "~{gcs_uri_prefix}"
       echo "${table_id}_${date_tag}.json copied to ~{gcs_uri_prefix} (${date_tag})"
     done
 
