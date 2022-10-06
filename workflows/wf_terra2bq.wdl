@@ -81,7 +81,7 @@ task terra_to_bigquery {
       table_name=${table_name_array[$index]}
       table_id=${table_id_array[$index]}
 
-      export terra_project workspace_name table_name table_id
+      export terra_project workspace_name table_name table_id date_tag
 
       # download Terra table TSV using export_large_tsv.py from Broad
       python3 /scripts/export_large_tsv/export_large_tsv.py \
