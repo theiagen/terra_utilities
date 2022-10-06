@@ -28,7 +28,8 @@ task terra_to_bigquery {
     Array[String]  table_names
     Array[String]  table_ids
     String  gcs_uri_prefix
-    String  docker = "schaluvadi/pathogen-genomic-surveillance:api-wdl"
+    String  docker = "broadinstitute/terra-tools:tqdm"
+    Int page_size = 5000
     Int mem_size_gb = 32
     Int CPUs = 8
     Int disk_size = 100
@@ -60,7 +61,7 @@ task terra_to_bigquery {
     echo -e "Input arrays are of equal length. \nProceeding to transfer the following Terra Data Tables to ~{gcs_uri_prefix}:\n${table_id_array[@]} \n\nTransfer will occur every ~{sleep_time} until this job is aborted.\n"
   fi
 
-  #Infinite While loop
+  # Infinite While loop
   counter=0
   echo -e "**ENTERING LOOP**"
   while true
@@ -73,7 +74,7 @@ task terra_to_bigquery {
     echo "TIME: ${date_tag}"
 
   # Loop through inputs and run python script to create tsv/json and push json to gcp bucket
-    for index in  ${!terra_project_array[@]}; do
+    for index in "${!terra_project_array[@]}"; do
       date_tag=$(date +"%Y-%m-%d-%Hh-%Mm-%Ss")
       terra_project=${terra_project_array[$index]}
       workspace_name=${workspace_name_array[$index]}
@@ -82,8 +83,18 @@ task terra_to_bigquery {
 
       export terra_project workspace_name table_name table_id
 
-      echo -e "\n::Procesing $table_id for export (${date_tag})::"
+      # download Terra table TSV using export_large_tsv.py from Broad
+      python3 /scripts/export_large_tsv/export_large_tsv.py \
+        --project "${terra_project}" \
+        --workspace "${workspace_name}" \
+        --entity_type "${table_name}" \
+        --page_size ~{page_size} \
+        --tsv_filename "${table_id}_${date_tag}.tsv"
 
+      echo -e "\n::Procesing ${table_id} for export (${date_tag})::"
+
+      # reformat TSV using code below
+      # additionally take cleaned-TSV and create nlJSON
       python3<<CODE
   import csv
   import json
@@ -92,6 +103,7 @@ task terra_to_bigquery {
 
   from firecloud import api as fapi
 
+  # sanity checks for env variables loaded into python
   workspace_project = os.environ['terra_project']
   print("workspace project: "+ workspace_project)
   workspace_name = os.environ['workspace_name']
@@ -100,29 +112,39 @@ task terra_to_bigquery {
   print("table name: "+ table_name)
   out_fname = os.environ['table_id']
   print("out_fname: " + out_fname)
+  date_tag = os.environ['date_tag']
+  print("date_tag: " + date_tag)
 
+  ####COMMENTING OUT THIS BLOCK####
   # Grabbbing defined table using firecloud api and reading data to to python dictionary
-  table = json.loads(fapi.get_entities_query(workspace_project, workspace_name, table_name, page=1, page_size=300272, sort_direction="asc", filter_terms=None).text)
-  headers = collections.OrderedDict()
-  rows = []
-  headers[table_name + "_id"] = 0
-  for row in table:
-    outrow = row['attributes']
-    for x in outrow.keys():
-      headers[x] = 0
-      if type(outrow[x]) == dict and set(outrow[x].keys()) == set(('itemsType', 'items')):
-        outrow[x] = outrow[x]['items']
-    outrow[table_name + "_id"] = row['name']
-    rows.append(outrow)
+  #table = json.loads(fapi.get_entitiesget_entities(workspace_project, workspace_name, table_name).text)
 
+  # instead of loading JSON directly from Terra data table, load in TSV that was just exported from Terra
+
+  ####COMMENTING OUT THIS BLOCK####
+  # This block transforms JSON to dictionary
+  # headers = collections.OrderedDict()
+  # rows = []
+  # headers[table_name + "_id"] = 0
+  # for row in table:
+  #   outrow = row['attributes']
+  #   for x in outrow.keys():
+  #     headers[x] = 0
+  #     if type(outrow[x]) == dict and set(outrow[x].keys()) == set(('itemsType', 'items')):
+  #       outrow[x] = outrow[x]['items']
+  #   outrow[table_name + "_id"] = row['name']
+  #   rows.append(outrow)
+
+  ####COMMENTING OUT THIS BLOCK####
   # Writing tsv output from dictionary object
-  with open(out_fname+'_temp.tsv', 'w') as outf:
-    writer = csv.DictWriter(outf, headers.keys(), delimiter='\t', dialect=csv.unix_dialect, quoting=csv.QUOTE_MINIMAL)
-    writer.writeheader()
-    writer.writerows(rows)
-
+  # with open(out_fname+'_temp.tsv', 'w') as outf:
+  #   writer = csv.DictWriter(outf, headers.keys(), delimiter='\t', dialect=csv.unix_dialect, quoting=csv.QUOTE_MINIMAL)
+  #   writer.writeheader()
+  #   writer.writerows(rows)
+  
+  # TSV add additional column
   # Add column to capture source terra table (table_id) 
-  with open(out_fname+'_temp.tsv','r') as csvinput:
+  with open(table_id + '_' + date_tag +'.tsv','r') as csvinput:
     with open(out_fname+'.tsv', 'w') as csvoutput:
         writer = csv.writer(csvoutput, delimiter='\t')
         reader = csv.reader(csvinput, delimiter='\t')
@@ -172,7 +194,8 @@ task terra_to_bigquery {
   CODE
 
       # add date tag when transferring file to gcp
-      date_tag=$(date +"%Y-%m-%d-%Hh-%Mm-%Ss")
+      #### date_tag variable is already set above the python block, so commenting out ###
+      #date_tag=$(date +"%Y-%m-%d-%Hh-%Mm-%Ss")
       gsutil -m cp "${table_id}.json" "~{gcs_uri_prefix}${table_id}_${date_tag}.json"
       echo "${table_id}_${date_tag}.json copied to ~{gcs_uri_prefix} (${date_tag})"
     done
@@ -190,5 +213,6 @@ task terra_to_bigquery {
   }
 
   output {
+    ## add outputs for all intermediate files
   }
 }
