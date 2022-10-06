@@ -144,7 +144,7 @@ task terra_to_bigquery {
   
   # TSV add additional column
   # Add column to capture source terra table (table_id) 
-  with open(table_id + '_' + date_tag +'.tsv','r') as csvinput:
+  with open(out_fname + '_' + date_tag +'.tsv','r') as csvinput:
     with open(out_fname+'.tsv', 'w') as csvoutput:
         writer = csv.writer(csvoutput, delimiter='\t')
         reader = csv.reader(csvinput, delimiter='\t')
