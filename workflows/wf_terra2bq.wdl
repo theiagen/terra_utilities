@@ -142,6 +142,8 @@ task terra_to_bigquery {
   #   writer.writeheader()
   #   writer.writerows(rows)
   
+  print("adding source_terra_table column to TSV...")
+
   # TSV add additional column
   # Add column to capture source terra table (table_id) 
   with open(out_fname + '_' + date_tag +'.tsv','r') as csvinput:
@@ -159,6 +161,8 @@ task terra_to_bigquery {
             all.append(tsv_row)
 
         writer.writerows(all)
+
+  print("converting TSV to newline JSON...")
 
   # Writing the newline json file from tsv output above
   with open(out_fname+'.tsv', 'r') as infile:
@@ -191,6 +195,7 @@ task terra_to_bigquery {
           else:
             outfile.write('"'+x+'"'+':'+'"'+y+'"'+',')
         outfile.write('"notes":""}'+'\n')
+  print ("finished creating newline JSON, exiting python block...")
   CODE
 
       export CLOUDSDK_PYTHON=python2.7  # ensure python 2.7 for gsutil commands
