@@ -206,7 +206,7 @@ task terra_to_bigquery {
 
       # copy new line JSON to bucket & copy re-formatted TSV (for testing purposes)
       gsutil -m cp "${table_id}.json" "~{gcs_uri_prefix}${table_id}_${date_tag}.json"
-      gsutil -m cp "${table_id}.tsv" "~{gcs_uri_prefix}${table_id}_${date_tag}.tsv"
+      #gsutil -m cp "${table_id}.tsv" "~{gcs_uri_prefix}${table_id}_${date_tag}.tsv"
       echo "${table_id}${table_id}_${date_tag}.json and ${table_id}${table_id}_${date_tag}.tsv copied to ~{gcs_uri_prefix}"
 
       unset CLOUDSDK_PYTHON   # probably not necessary, but in case I do more things afterwards, this resets that env var
