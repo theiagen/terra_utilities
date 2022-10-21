@@ -8,6 +8,7 @@ workflow terra_2_bq {
       Array[String]  table_names
       Array[String]  table_ids
       String  gcs_uri
+      String?  output_filename_prefix
     }
 
     call terra_to_bigquery {
@@ -16,7 +17,8 @@ workflow terra_2_bq {
         workspace_names=workspace_names,
         table_names=table_names,
         table_ids=table_ids,
-        gcs_uri_prefix=gcs_uri
+        gcs_uri_prefix=gcs_uri,
+        output_filename_prefix=output_filename_prefix
     }
 
 }
@@ -28,6 +30,7 @@ task terra_to_bigquery {
     Array[String]  table_names
     Array[String]  table_ids
     String  gcs_uri_prefix
+    String?  output_filename_prefix
     String  docker = "broadinstitute/terra-tools:tqdm"
     Int page_size = 5000
     Int mem_size_gb = 32
@@ -204,10 +207,19 @@ task terra_to_bigquery {
       #### date_tag variable is already set above the python block, so commenting out ###
       #date_tag=$(date +"%Y-%m-%d-%Hh-%Mm-%Ss")
 
-      # copy new line JSON to bucket & copy re-formatted TSV (for testing purposes)
-      gsutil -m cp "${table_id}.json" "~{gcs_uri_prefix}${table_id}_${date_tag}.json"
-      #gsutil -m cp "${table_id}.tsv" "~{gcs_uri_prefix}${table_id}_${date_tag}.tsv"
-      echo "${table_id}${table_id}_${date_tag}.json and ${table_id}${table_id}_${date_tag}.tsv copied to ~{gcs_uri_prefix}"
+      # if user defines a filename prefix, then use it to name the output JSON file
+      # if output_filename_prefix WDL input string is non-zero, return TRUE
+      if [ -n "~{output_filename_prefix}" ]; then
+        echo "User specified an output filename prefix of:" ~{output_filename_prefix}
+        # copy new line JSON to bucket & copy re-formatted TSV (for testing purposes)
+        gsutil -m cp "${table_id}.json" "~{gcs_uri_prefix}.json"
+        echo "${table_id}${table_id}_${date_tag}.json and ${table_id}${table_id}_${date_tag}.tsv copied to ~{gcs_uri_prefix}"
+      else
+        # copy new line JSON to bucket & copy re-formatted TSV (for testing purposes)
+        echo "User did NOT specify an output prefix, using default prefix with table_id and date_tag variables"
+        gsutil -m cp "${table_id}.json" "~{gcs_uri_prefix}${table_id}_${date_tag}.json"
+        echo "${table_id}${table_id}_${date_tag}.json and ${table_id}${table_id}_${date_tag}.tsv copied to ~{gcs_uri_prefix}"
+      fi
 
       unset CLOUDSDK_PYTHON   # probably not necessary, but in case I do more things afterwards, this resets that env var
     done
