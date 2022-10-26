@@ -7,8 +7,8 @@ workflow terra_2_bq {
       Array[String]  workspace_names
       Array[String]  table_names
       Array[String]  table_ids
-      String  gcs_uri
-      String?  output_filename_prefix
+      Array[String]  gcs_uris
+      Array[String]  output_filename_prefixs
     }
 
     call terra_to_bigquery {
@@ -17,8 +17,8 @@ workflow terra_2_bq {
         workspace_names=workspace_names,
         table_names=table_names,
         table_ids=table_ids,
-        gcs_uri_prefix=gcs_uri,
-        output_filename_prefix=output_filename_prefix
+        gcs_uri_prefixs=gcs_uris,
+        output_filename_prefix=output_filename_prefixs
     }
 
 }
@@ -29,8 +29,8 @@ task terra_to_bigquery {
     Array[String]  workspace_names
     Array[String]  table_names
     Array[String]  table_ids
-    String  gcs_uri_prefix
-    String?  output_filename_prefix
+    Array[String]  gcs_uri_prefixs
+    Array[String]?  output_filename_prefix
     String  docker = "broadinstitute/terra-tools:tqdm"
     Int page_size = 5000
     Int mem_size_gb = 32
@@ -54,14 +54,19 @@ task terra_to_bigquery {
   table_name_array_len=$(echo "${#table_name_array[@]}")
   table_id_array=(~{sep=' ' table_ids})
   table_id__array_len=$(echo "${#table_id_array[@]}")
+  gcs_uri_prefix_array=(~{sep=' ' gcs_uri_prefixs})
+  gcs_uri_prefix_array_len=$(echo "${#gcs_uri_prefix_array[@]}")
+  output_filename_prefix_array=(~{sep=' ' output_filename_prefix})
+  output_filename_prefix_array_len=$(echo "${#output_filename_prefix[@]}")
 
-  # Ensure equal length of all input arrays
-  echo "Terra Projects: $terra_project_array_len, Workspace name: $workspace_name_array_len, Table Names: $table_name_array_len, Table IDs: $table_id_array_len"
-  if [ "$terra_project_array_len" -ne "$workspace_name_array_len" ] && [ "$terra_project_array_len" -ne "$table_name_array_len" ] && [ "$terra_project_array_len" -ne "$table_id_array_len" ]; then
-    echo "Input arrays are of unequal length. Terra Projects: $terra_project_array_len, Workspace name: $workspace_name_array_len, Table Names: $table_name_array_len, Table IDs: $table_id_array_len" >&2
+
+  # Ensure equal length of all input arrays (excluding output filename prefix array for length check since it is optional)
+  echo "Terra Projects array length: $terra_project_array_len, Workspace name array length: $workspace_name_array_len, Table Name array length: $table_name_array_len, Table ID array length: $table_id_array_len, GCS URI prefixes array length: $gcs_uri_prefix_array_len"
+  if [ "$terra_project_array_len" -ne "$workspace_name_array_len" ] && [ "$terra_project_array_len" -ne "$table_name_array_len" ] && [ "$terra_project_array_len" -ne "$table_id_array_len" ] && [ "$terra_project_array_len" -ne "$gcs_uri_prefix_array" ]; then
+    echo "Input arrays are of unequal length. Terra Projects array length: $terra_project_array_len, Workspace name array length: $workspace_name_array_len, Table Name array length: $table_name_array_len, Table ID array length: $table_id_array_len, GCS URI prefix array length: $gcs_uri_prefix_array_len" >&2
     exit 1
   else
-    echo -e "Input arrays are of equal length. \nProceeding to transfer the following Terra Data Tables to ~{gcs_uri_prefix}:\n${table_id_array[@]} \n\nTransfer will occur every ~{sleep_time} until this job is aborted.\n"
+    echo -e "Input arrays are of equal length. \nProceeding to transfer the following Terra Data Tables to their specified GCS URIs: ${gcs_uri_prefix_array[@]}\n${table_id_array[@]} \n\nTransfer will occur every ~{sleep_time} until this job is aborted.\n"
   fi
 
   # Infinite While loop
@@ -76,15 +81,17 @@ task terra_to_bigquery {
     echo -e "\n========== Iteration number ${counter} of continuous loop =========="
     echo "TIME: ${date_tag}"
 
-  # Loop through inputs and run python script to create tsv/json and push json to gcp bucket
+  # Loop through inputs and run python script to create tsv/json and push json to specified gcp bucket
     for index in "${!terra_project_array[@]}"; do
       date_tag=$(date +"%Y-%m-%d-%Hh-%Mm-%Ss")
       terra_project=${terra_project_array[$index]}
       workspace_name=${workspace_name_array[$index]}
       table_name=${table_name_array[$index]}
       table_id=${table_id_array[$index]}
+      gcs_uri=${gcs_uri_prefix_array[$index]}
+      output_filename_prefix=${output_filename_prefix_array[$index]}
 
-      export terra_project workspace_name table_name table_id date_tag
+      export terra_project workspace_name table_name table_id date_tag gcs_uri output_filename_prefix
 
       # download Terra table TSV using export_large_tsv.py from Broad
       python3 /scripts/export_large_tsv/export_large_tsv.py \
@@ -208,17 +215,17 @@ task terra_to_bigquery {
       #date_tag=$(date +"%Y-%m-%d-%Hh-%Mm-%Ss")
 
       # if user defines a filename prefix, then use it to name the output JSON file
-      # if output_filename_prefix WDL input string is non-zero, return TRUE
-      if [ -n "~{output_filename_prefix}" ]; then
-        echo "User specified an output filename prefix of:" ~{output_filename_prefix}
+      # if output_filename_prefix bash input string is non-zero, return TRUE
+      if [ -n "${output_filename_prefix}" ]; then
+        echo "User specified an output filename prefix of:" ${output_filename_prefix}
         # copy new line JSON to bucket & copy re-formatted TSV (for testing purposes)
-        gsutil -m cp "${table_id}.json" "~{gcs_uri_prefix}~{output_filename_prefix}.json"
-        echo "~{output_filename_prefix}.json copied to ~{gcs_uri_prefix}"
+        gsutil -m cp "${table_id}.json" "${gcs_uri_prefix}${output_filename_prefix}.json"
+        echo "${output_filename_prefix}.json copied to ${gcs_uri_prefix}"
       else
         # copy new line JSON to bucket & copy re-formatted TSV (for testing purposes)
         echo "User did NOT specify an output prefix, using default prefix with table_id and date_tag variables"
-        gsutil -m cp "${table_id}.json" "~{gcs_uri_prefix}${table_id}_${date_tag}.json"
-        echo "${table_id}${table_id}_${date_tag}.json copied to ~{gcs_uri_prefix}"
+        gsutil -m cp "${table_id}.json" "${gcs_uri_prefix}${table_id}_${date_tag}.json"
+        echo "${table_id}_${date_tag}.json copied to ${gcs_uri_prefix}"
       fi
 
       unset CLOUDSDK_PYTHON   # probably not necessary, but in case I do more things afterwards, this resets that env var
