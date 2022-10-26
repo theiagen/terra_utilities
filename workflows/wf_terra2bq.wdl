@@ -230,8 +230,9 @@ task terra_to_bigquery {
 
       unset CLOUDSDK_PYTHON   # probably not necessary, but in case I do more things afterwards, this resets that env var
     done
-
+    echo "Sleeping for user-specified time of " ~{sleep_time}
     sleep ~{sleep_time}
+    echo "Finished sleeping, onto the next iteration of the loop!"
   done
   echo "Loop exited"
   >>>
