@@ -93,6 +93,9 @@ task terra_to_bigquery {
 
       export terra_project workspace_name table_name table_id date_tag gcs_uri output_filename_prefix
 
+      echo
+      echo "***Exporting Terra table ${table_name} from workspace ${workspace_name} in Terra project ${terra_project}***"
+
       # download Terra table TSV using export_large_tsv.py from Broad
       python3 /scripts/export_large_tsv/export_large_tsv.py \
         --project "${terra_project}" \
@@ -102,6 +105,7 @@ task terra_to_bigquery {
         --tsv_filename "${table_id}_${date_tag}.tsv"
 
       echo -e "\n::Procesing ${table_id} for export (${date_tag})::"
+      echo
 
       # reformat TSV using code below
       # additionally take cleaned-TSV and create nlJSON
@@ -217,6 +221,7 @@ task terra_to_bigquery {
       # if user defines a filename prefix, then use it to name the output JSON file
       # if output_filename_prefix bash input string is non-zero, return TRUE
       if [ -n "${output_filename_prefix}" ]; then
+        echo
         echo "User specified an output filename prefix of: ${output_filename_prefix}"
         # copy new line JSON to bucket & copy re-formatted TSV (for testing purposes)
         gsutil -m cp "${table_id}.json" "${gcs_uri}${output_filename_prefix}.json"
@@ -224,9 +229,14 @@ task terra_to_bigquery {
       else
         # copy new line JSON to bucket & copy re-formatted TSV (for testing purposes)
         echo "User did NOT specify an output prefix, using default prefix with table_id and date_tag variables"
+        echo
         gsutil -m cp "${table_id}.json" "${gcs_uri}${table_id}_${date_tag}.json"
         echo "${table_id}_${date_tag}.json copied to ${gcs_uri}"
+        echo
       fi
+      
+      echo -e "***Finished exporting and copying of table ${table_id} to the specified google bucket. Moving to the next data table!***"
+      echo
 
       unset CLOUDSDK_PYTHON   # probably not necessary, but in case I do more things afterwards, this resets that env var
     done
