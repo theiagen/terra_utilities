@@ -30,7 +30,7 @@ task terra_to_bigquery {
     Array[String]  table_names
     Array[String]  table_ids
     Array[String]  gcs_uri_prefixs
-    Array[String]?  output_filename_prefix
+    Array[String]  output_filename_prefix
     String  docker = "broadinstitute/terra-tools:tqdm"
     Int page_size = 5000
     Int mem_size_gb = 32
@@ -62,7 +62,7 @@ task terra_to_bigquery {
 
   # Ensure equal length of all input arrays (excluding output filename prefix array for length check since it is optional)
   echo "Terra Projects array length: $terra_project_array_len, Workspace name array length: $workspace_name_array_len, Table Name array length: $table_name_array_len, Table ID array length: $table_id_array_len, GCS URI prefixes array length: $gcs_uri_prefix_array_len"
-  if [ "$terra_project_array_len" -ne "$workspace_name_array_len" ] && [ "$terra_project_array_len" -ne "$table_name_array_len" ] && [ "$terra_project_array_len" -ne "$table_id_array_len" ] && [ "$terra_project_array_len" -ne "$gcs_uri_prefix_array" ]; then
+  if [ "$terra_project_array_len" -ne "$workspace_name_array_len" ] && [ "$terra_project_array_len" -ne "$table_name_array_len" ] && [ "$terra_project_array_len" -ne "$table_id_array_len" ] && [ "$terra_project_array_len" -ne "$gcs_uri_prefix_array" ] && [ "$terra_project_array_len" -ne "$output_filename_prefix_array" ]; then
     echo "Input arrays are of unequal length. Terra Projects array length: $terra_project_array_len, Workspace name array length: $workspace_name_array_len, Table Name array length: $table_name_array_len, Table ID array length: $table_id_array_len, GCS URI prefix array length: $gcs_uri_prefix_array_len" >&2
     exit 1
   else
@@ -90,6 +90,12 @@ task terra_to_bigquery {
       table_id=${table_id_array[$index]}
       gcs_uri=${gcs_uri_prefix_array[$index]}
       output_filename_prefix=${output_filename_prefix_array[$index]}
+
+      # if user specifies 'date' as output_filename_prefix, reset variable to default table filename ${table_id}_${date_tag}.json
+      if [ "${output_filename_prefix}" == "date" ]; then
+        echo 'User specified "date"' "for output_filename_prefix, final output JSON will be named: ${gcs_uri}${table_id}_${date_tag}.json"
+        output_filename_prefix="${table_id}_${date_tag}"
+      fi
 
       export terra_project workspace_name table_name table_id date_tag gcs_uri output_filename_prefix
 
@@ -218,6 +224,7 @@ task terra_to_bigquery {
       #### date_tag variable is already set above the python block, so commenting out ###
       #date_tag=$(date +"%Y-%m-%d-%Hh-%Mm-%Ss")
 
+      # THIS IF BLOCK SHOULD ALWAYS BE TRIGGERED AS LONG AS USER DEFINES OUTPUT FILENAME PREFIX FOR ALL TABLES
       # if user defines a filename prefix, then use it to name the output JSON file
       # if output_filename_prefix bash input string is non-zero, return TRUE
       if [ -n "${output_filename_prefix}" ]; then
