@@ -61,12 +61,29 @@ task terra_to_bigquery {
 
 
   # Ensure equal length of all input arrays
-  echo "Terra Projects array length: $terra_project_array_len, Workspace name array length: $workspace_name_array_len, Table Name array length: $table_name_array_len, Table ID array length: $table_id_array_len, GCS URI prefixes array length: $gcs_uri_prefix_array_len"
-  if [ "$terra_project_array_len" -ne "$workspace_name_array_len" ] || [ "$terra_project_array_len" -ne "$table_name_array_len" ] || [ "$terra_project_array_len" -ne "$table_id_array_len" ] || [ "$terra_project_array_len" -ne "$gcs_uri_prefix_array_len" ] || [ "$terra_project_array_len" -ne "$output_filename_prefix_array_len" ]; then
-    echo "Input arrays are of unequal length. Terra Projects array length: $terra_project_array_len, Workspace name array length: $workspace_name_array_len, Table Name array length: $table_name_array_len, Table ID array length: $table_id_array_len, GCS URI prefix array length: $gcs_uri_prefix_array_len" >&2
-    exit 1
+  echo "Terra Projects array length: $terra_project_array_len"
+  echo "Workspace name array length: $workspace_name_array_len"
+  echo "Table Name array length: $table_name_array_len"
+  echo "Table ID array length: $table_id_array_len" 
+  echo "GCS URI prefixes array length: $gcs_uri_prefix_array_len"
+
+  if [ $terra_project_array_len -eq $workspace_name_array_len ] && [ $terra_project_array_len -eq $table_name_array_len ] && [ $terra_project_array_len -eq $table_id_array_len ] && [ $terra_project_array_len -eq $gcs_uri_prefix_array_len ] && [ $terra_project_array_len -eq $output_filename_prefix_array_len ]; then
+    echo "Input arrays are of equal length."
+    echo "Proceeding to transfer the following Terra Data Tables to their specified GCS URIs: ${#gcs_uri_prefix_array[@]}"
+    echo
+    echo "Table name array: ${#table_name_array[@]}"
+    echo
+    echo "Transfer will occur every ~{sleep_time} until this job is aborted."
   else
-    echo -e "Input arrays are of equal length. \nProceeding to transfer the following Terra Data Tables to their specified GCS URIs: ${gcs_uri_prefix_array[@]}\n${table_name_array[@]} \n\nTransfer will occur every ~{sleep_time} until this job is aborted.\n"
+    echo "Input arrays are of unequal length" >&2
+    echo "Terra Projects array length: $terra_project_array_len" >&2
+    echo "Workspace name array length: $workspace_name_array_len"  >&2
+    echo "Table Name array length: $table_name_array_len" >&2
+    echo "Table ID array length: $table_id_array_len" >&2
+    echo "GCS URI prefix array length: $gcs_uri_prefix_array_len" >&2
+    echo
+    echo "Exiting script! Please check your inputs!"
+    exit 1
   fi
 
   # Infinite While loop
