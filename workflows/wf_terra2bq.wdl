@@ -62,7 +62,7 @@ task terra_to_bigquery {
 
   # Ensure equal length of all input arrays
   echo "Terra Projects array length: $terra_project_array_len, Workspace name array length: $workspace_name_array_len, Table Name array length: $table_name_array_len, Table ID array length: $table_id_array_len, GCS URI prefixes array length: $gcs_uri_prefix_array_len"
-  if [ "$terra_project_array_len" -ne "$workspace_name_array_len" ] && [ "$terra_project_array_len" -ne "$table_name_array_len" ] && [ "$terra_project_array_len" -ne "$table_id_array_len" ] && [ "$terra_project_array_len" -ne "$gcs_uri_prefix_array_len" ] && [ "$terra_project_array_len" -ne "$output_filename_prefix_array_len" ]; then
+  if [ "$terra_project_array_len" -ne "$workspace_name_array_len" ] || [ "$terra_project_array_len" -ne "$table_name_array_len" ] || [ "$terra_project_array_len" -ne "$table_id_array_len" ] || [ "$terra_project_array_len" -ne "$gcs_uri_prefix_array_len" ] || [ "$terra_project_array_len" -ne "$output_filename_prefix_array_len" ]; then
     echo "Input arrays are of unequal length. Terra Projects array length: $terra_project_array_len, Workspace name array length: $workspace_name_array_len, Table Name array length: $table_name_array_len, Table ID array length: $table_id_array_len, GCS URI prefix array length: $gcs_uri_prefix_array_len" >&2
     exit 1
   else
