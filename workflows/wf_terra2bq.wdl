@@ -57,7 +57,7 @@ task terra_to_bigquery {
   gcs_uri_prefix_array=(~{sep=' ' gcs_uri_prefixs})
   gcs_uri_prefix_array_len=$(echo "${#gcs_uri_prefix_array[@]}")
   output_filename_prefix_array=(~{sep=' ' output_filename_prefix})
-  output_filename_prefix_array_len=$(echo "${#output_filename_prefix[@]}")
+  output_filename_prefix_array_len=$(echo "${#output_filename_prefix_array[@]}")
 
   # Ensure equal length of all input arrays
   echo "Terra Projects array length: $terra_project_array_len"
@@ -100,6 +100,13 @@ task terra_to_bigquery {
     exit 1
   fi
   
+   echo "comparing arrays: terra_project_array_len and output_filename_prefix_array_len"
+  if [ $terra_project_array_len -eq $output_filename_prefix_array_len ]; then
+    echo "Input arrays are of equal length."
+  else 
+    echo "Input arrays are of unequal length. Exiting. Please check your inputs!"
+    exit 1
+  fi
   
   # [ $terra_project_array_len -eq $output_filename_prefix_array_len ]; then
   #   echo "Input arrays are of equal length."
