@@ -59,32 +59,67 @@ task terra_to_bigquery {
   output_filename_prefix_array=(~{sep=' ' output_filename_prefix})
   output_filename_prefix_array_len=$(echo "${#output_filename_prefix[@]}")
 
-
   # Ensure equal length of all input arrays
   echo "Terra Projects array length: $terra_project_array_len"
   echo "Workspace name array length: $workspace_name_array_len"
   echo "Table Name array length: $table_name_array_len"
   echo "Table ID array length: $table_id_array_len" 
   echo "GCS URI prefixes array length: $gcs_uri_prefix_array_len"
+  echo "Output filename prefix array: $output_filename_prefix_array_len"
+  echo
 
-  if [ $terra_project_array_len -eq $workspace_name_array_len ] && [ $terra_project_array_len -eq $table_name_array_len ] && [ $terra_project_array_len -eq $table_id_array_len ] && [ $terra_project_array_len -eq $gcs_uri_prefix_array_len ] && [ $terra_project_array_len -eq $output_filename_prefix_array_len ]; then
+  echo "comparing arrays: terra_project_array_len and workspace_name_array_len"
+  if [ $terra_project_array_len -eq $workspace_name_array_len ]; then
     echo "Input arrays are of equal length."
-    echo "Proceeding to transfer the following Terra Data Tables to their specified GCS URIs: ${#gcs_uri_prefix_array[@]}"
-    echo
-    echo "Table name array: ${#table_name_array[@]}"
-    echo
-    echo "Transfer will occur every ~{sleep_time} until this job is aborted."
-  else
-    echo "Input arrays are of unequal length" >&2
-    echo "Terra Projects array length: $terra_project_array_len" >&2
-    echo "Workspace name array length: $workspace_name_array_len"  >&2
-    echo "Table Name array length: $table_name_array_len" >&2
-    echo "Table ID array length: $table_id_array_len" >&2
-    echo "GCS URI prefix array length: $gcs_uri_prefix_array_len" >&2
-    echo
-    echo "Exiting script! Please check your inputs!"
+  else 
+    echo "Input arrays are of unequal length. Exiting"
+    exit 1
+  fi 
+  
+  echo "comparing arrays: terra_project_array_len and table_name_array_len"
+  if [ $terra_project_array_len -eq $table_name_array_len ]; then
+    echo "Input arrays are of equal length."
+  else 
+    echo "Input arrays are of unequal length. Exiting. Please check your inputs!"
     exit 1
   fi
+  
+  echo "comparing arrays: terra_project_array_len and table_id_array_len"
+  if [ $terra_project_array_len -eq $table_id_array_len ]; then
+    echo "Input arrays are of equal length."
+  else 
+    echo "Input arrays are of unequal length. Exiting. Please check your inputs!"
+    exit 1
+  fi
+  
+  echo "comparing arrays: terra_project_array_len and gcs_uri_prefix_array_len"
+  [ $terra_project_array_len -eq $gcs_uri_prefix_array_len ]; then
+    echo "Input arrays are of equal length."
+  else 
+    echo "Input arrays are of unequal length. Exiting. Please check your inputs!"
+    exit 1
+  fi
+  
+  
+  # [ $terra_project_array_len -eq $output_filename_prefix_array_len ]; then
+  #   echo "Input arrays are of equal length."
+  #   echo "Proceeding to transfer the following Terra Data Tables to their specified GCS URIs: ${#gcs_uri_prefix_array[@]}"
+  #   echo
+  #   echo "Table name array: ${#table_name_array[@]}"
+  #   echo
+  #   echo "Transfer will occur every ~{sleep_time} until this job is aborted."
+  # else
+  #   echo "Input arrays are of unequal length" >&2
+  #   echo "Terra Projects array length: $terra_project_array_len" >&2
+  #   echo "Workspace name array length: $workspace_name_array_len"  >&2
+  #   echo "Table Name array length: $table_name_array_len" >&2
+  #   echo "Table ID array length: $table_id_array_len" >&2
+  #   echo "GCS URI prefix array length: $gcs_uri_prefix_array_len" >&2
+  #   echo "Output filename prefix array: $output_filename_prefix_array_len" >&2
+  #   echo
+  #   echo "Exiting script! Please check your inputs!"
+  #   exit 1
+  # fi
 
   # Infinite While loop
   counter=0
