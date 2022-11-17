@@ -93,7 +93,7 @@ task terra_to_bigquery {
   fi
   
   echo "comparing arrays: terra_project_array_len and gcs_uri_prefix_array_len"
-  [ $terra_project_array_len -eq $gcs_uri_prefix_array_len ]; then
+  if [ $terra_project_array_len -eq $gcs_uri_prefix_array_len ]; then
     echo "Input arrays are of equal length."
   else 
     echo "Input arrays are of unequal length. Exiting. Please check your inputs!"
