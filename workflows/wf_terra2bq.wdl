@@ -146,8 +146,9 @@ task terra_to_bigquery {
       terra_project=${terra_project_array[$index]}
       workspace_name=${workspace_name_array[$index]}
       table_name=${table_name_array[$index]}
-      # commenting out table_id since it should not be used here, I'd prefer to use table_name which is the literal name of the Terra data table
-      #table_id=${table_id_array[$index]}
+      # re-enabling table_id to use to fill out the "source_terra_table" field in output JSON instead of using the table_name 
+      # allows to differentiate between identically-named data tables coming from different counties or labs. eg. "sample" data table for all ClearLabs users
+      table_id=${table_id_array[$index]}
       gcs_uri=${gcs_uri_prefix_array[$index]}
       output_filename_prefix=${output_filename_prefix_array[$index]}
 
@@ -157,7 +158,7 @@ task terra_to_bigquery {
         output_filename_prefix="${table_name}_${date_tag}"
       fi
 
-      export terra_project workspace_name table_name date_tag gcs_uri output_filename_prefix
+      export terra_project workspace_name table_name table_id date_tag gcs_uri output_filename_prefix
 
       echo
       echo "***Exporting Terra table ${table_name} from workspace ${workspace_name} in Terra project ${terra_project}***"
@@ -191,6 +192,8 @@ task terra_to_bigquery {
   print("workspace name: "+ workspace_name)
   table_name = os.environ['table_name']
   print("table name: "+ table_name)
+  table_id = os.environ['table_id']
+  print("table_id: "+ table_id)
   #out_fname = os.environ['table_id']
   #print("out_fname: " + out_fname)
   date_tag = os.environ['date_tag']
@@ -238,7 +241,7 @@ task terra_to_bigquery {
         all.append(tsv_row)
 
         for tsv_row in reader:
-            tsv_row.append(table_name)
+            tsv_row.append(table_id)
             all.append(tsv_row)
 
         writer.writerows(all)
