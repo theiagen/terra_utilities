@@ -98,7 +98,11 @@ task cat_files {
   input {
     Array[File] files_to_cat
     String concatenated_file_name
-    String? docker_image = "quay.io/theiagen/utility:1.1"
+    String docker_image = "quay.io/theiagen/utility:1.1"
+  }
+  meta {
+    # added so that call caching is always turned off
+    volatile: true
   }
   command <<<
     file_array=(~{sep=' ' files_to_cat})
@@ -116,7 +120,7 @@ task cat_files {
   runtime {
     docker: "~{docker_image}"
     memory: "8 GB"
-    cpu: 4
+    cpu: 2
     disks: "local-disk 100 SSD"
     preemptible: 0
   }
@@ -125,7 +129,11 @@ task zip_files {
   input {
     Array[File] files_to_zip
     String zipped_file_name
-    String? docker_image = "quay.io/theiagen/utility:1.1"
+    String docker_image = "quay.io/theiagen/utility:1.1"
+  }
+  meta {
+    # added so that call caching is always turned off
+    volatile: true
   }
   command <<<
     file_array=(~{sep=' ' files_to_zip})
@@ -145,7 +153,7 @@ task zip_files {
   runtime {
       docker: "~{docker_image}"
       memory: "8 GB"
-      cpu: 4
+      cpu: 2
       disks: "local-disk 100 SSD"
       preemptible: 0
   }
@@ -156,7 +164,7 @@ task transfer_files {
     String target_bucket
     Int CPUs = 4
     Int mem_size_gb = 8
-    String? docker_image = "quay.io/theiagen/utility:1.1"
+    String docker_image = "quay.io/theiagen/utility:1.1"
   }
   command <<<
     file_path_array="~{sep=' ' files_to_transfer}"
