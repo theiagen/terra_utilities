@@ -178,3 +178,69 @@ task transfer_files {
       preemptible: 0
   }
 }
+  task concatenate_illumina {
+    input {
+      String samplename
+      File read1_lane1
+      File? read2_lane1
+      File read1_lane2
+      File? read2_lane2
+      File? read1_lane3
+      File? read2_lane3
+      File? read1_lane4
+      File? read2_lane4
+      String docker = "quay.io/theiagen/utilities:latest"
+    }
+    meta {
+      # so that this always runs from the start and never uses cache
+      volatile: true
+    }
+  command <<<
+    # exit task if anything throws an error
+    set -e
+
+    echo "PWD is: $(pwd)"
+
+    # move reads into single directory
+    mkdir -v reads
+    mv -v ~{read1_lane1} \
+          ~{read2_lane1} \
+          ~{read1_lane2} \
+          ~{read2_lane2} \
+          ~{read1_lane3} \
+          ~{read2_lane3} \
+          ~{read1_lane4} \
+          ~{read2_lane4} \
+      reads/
+
+    # check for valid gzipped format if filenames ending with .gz
+    gzip -t reads/*.gz
+
+    # ADD CHECKS HERE? EQUAL NUMBERS OF READS? ANYTHING ELSE?
+
+    # run concatenate script and send STDOUT/ERR to STDOUT
+    # reminder: script will skip over samples that only have R1 file present
+    # reminder: script REQUIRES standard illumina file endings like: _L001_R1_001.fastq.gz and _L002_R2_001.fastq.gz
+    # see script here: https://github.com/theiagen/utilities/blob/main/scripts/concatenate-across-lanes.sh
+    concatenate-across-lanes.sh reads/
+
+    # ensure newly merged FASTQs are valid gzipped format
+    gzip -t reads/*merged*.gz
+
+    # determine output filenames for outputs
+    mv -v reads/*_merged_R1.fastq.gz reads/~{samplename}_merged_R1.fastq.gz
+    mv -v reads/*_merged_R2.fastq.gz reads/~{samplename}_merged_R2.fastq.gz
+
+>>>
+  output {
+    File read1_concatenated = "reads/~{samplename}_merged_R1.fastq.gz"
+    File? read2_concatenated = "reads/~{samplename}_merged_R2.fastq.gz"
+  }
+  runtime {
+      docker: "~{docker}"
+      memory: "4 GB"
+      cpu: 2
+      disks: "local-disk 50 SSD"
+      preemptible: 0
+  }
+}
