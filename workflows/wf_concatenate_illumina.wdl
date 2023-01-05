@@ -32,8 +32,8 @@ workflow concatenate_illumina_fastqs {
   }
   output {
     # version capture task outputs
-    String import_pe_version = version_capture.terra_utilities_version
-    String import_pe_analysis_date = version_capture.date
+    String concatenate_multilane_illumina_fastqs_version = version_capture.terra_utilities_version
+    String concatenate_multilane_illumina_fastqs_analysis_date = version_capture.date
     # concatenate_illumina task outputs
     File read1_concatenated = concatenate_illumina.read1_concatenated
     File? read2_concatenated = concatenate_illumina.read2_concatenated
