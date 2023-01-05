@@ -194,12 +194,11 @@ task transfer_files {
     meta {
       # so that this always runs from the start and never uses cache
       volatile: true
+      description: "Concatenates FASTQs for samples sequenced on an ILMN machine with multiple lanes (NextSeq, HiSeq, NovaSeq). Requires filenames to have standard ILMN file endings like: _L001_R1_001.fastq.gz"
     }
   command <<<
-    # exit task if anything throws an error
+    # exit task if anything throws an error (important for proper gzip format)
     set -e
-
-    echo "PWD is: $(pwd)"
 
     # move reads into single directory
     mkdir -v reads
@@ -213,7 +212,7 @@ task transfer_files {
           ~{read2_lane4} \
       reads/
 
-    # check for valid gzipped format if filenames ending with .gz
+    # check for valid gzipped format (this task assumes FASTQ files are gzipped - they should be coming from ILMN instruments)
     gzip -t reads/*.gz
 
     # ADD CHECKS HERE? EQUAL NUMBERS OF READS? ANYTHING ELSE?
