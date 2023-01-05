@@ -50,3 +50,8 @@ workflows:
    primaryDescriptorPath: /workflows/wf_sra_fetch.wdl
    testParameterFiles:
     - empty.json
+ - name: Concatenate_multilane_Illumina_FASTQs
+   subclass: WDL
+   primaryDescriptorPath: /workflows/wf_concatenate_illumina.wdl
+   testParameterFiles:
+    - empty.json
