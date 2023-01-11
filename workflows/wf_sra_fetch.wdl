@@ -23,7 +23,7 @@ task fastq_dl_sra {
     fastq-dl ~{sra_accession} SRA
 
     # tag single-end reads with _1
-    if [ -f "~{sra_accession}.fastq.gz" ]; then
+    if [ -f "~{sra_accession}.fastq.gz" ] && [ ! -f "~{sra_accession}_1.fastq.gz" ]; then
       mv "~{sra_accession}.fastq.gz" "~{sra_accession}_1.fastq.gz"
     fi
 
