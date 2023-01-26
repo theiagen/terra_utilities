@@ -5,13 +5,13 @@ task ncbi_sftp_upload {
     File submission_xml
     Array[File] additional_files = []
     File config_js
-    Boolean production_submission
+    Boolean submit_to_production
 
     String wait_for="1"  # all, disabled, some number
   }
   command <<<
     # if this is a production submission, then path = production
-    if ~{production_submission}; then
+    if ~{submit_to_production}; then
       path="Production"
     else # this is a test submission
       path="Test"
@@ -93,7 +93,7 @@ task biosample_submit_tsv_ftp_upload {
   input {
     File meta_submit_tsv
     File config_js
-    Boolean production_submission
+    Boolean submit_to_production
   }
   String base=basename(meta_submit_tsv, '.tsv')
   meta {
@@ -101,7 +101,7 @@ task biosample_submit_tsv_ftp_upload {
   }
   command <<<
     # if this is a production submission, then path = production
-     if ~{production_submission}; then
+     if ~{submit_to_production}; then
       path="Production"
     else # this is a test submission
       path="Test"
