@@ -14,7 +14,7 @@ workflow Terra_2_NCBI {
     File ncbi_config_js
     File? input_table # for command line testing only
     String biosample_package # used to be biosample_type
-    String gcp_bucket_uri
+    String sra_transfer_gcp_bucket # used to be gcp_bucket_uri
     Boolean submit_to_production = false # used to be path_on_ftp_server
     String bioproject
   }
@@ -30,7 +30,7 @@ workflow Terra_2_NCBI {
       input_table = input_table,
       biosample_type = biosample_package,
       bioproject = bioproject,
-      gcp_bucket_uri = gcp_bucket_uri,
+      gcp_bucket_uri = sra_transfer_gcp_bucket,
       skip_biosample = skip_biosample
   }
   if (skip_biosample == false){
@@ -55,7 +55,7 @@ workflow Terra_2_NCBI {
         meta_submit_tsv = select_first([add_biosample_accessions.sra_table, prune_table.sra_table]),
         config_js = ncbi_config_js,
         bioproject = bioproject,
-        data_bucket_uri = gcp_bucket_uri
+        data_bucket_uri = sra_transfer_gcp_bucket
     }
     call ncbi_tools.ncbi_sftp_upload {
       input: 
