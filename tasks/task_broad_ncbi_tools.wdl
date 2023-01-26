@@ -5,15 +5,15 @@ task ncbi_sftp_upload {
     File submission_xml
     Array[File] additional_files = []
     File config_js
-    String target_path
+    Boolean production_submission
 
     String wait_for="1"  # all, disabled, some number
   }
   command <<<
-    # append current date to the second to end of target_path 
-    if [ ~"{target_path}" == "production" ] || [ "~{target_path}" == "Production" ]; then
+    # if this is a production submission, then path = production
+    if ~{production_submission}; then
       path="Production"
-    else # if they don't put in production, it will default to Test
+    else # this is a test submission
       path="Test"
     fi
 
@@ -28,7 +28,7 @@ task ncbi_sftp_upload {
       cp ~{sep=' ' additional_files} files/
     fi
     MANIFEST=$(ls -1 files | paste -sd,)
-    echo "uploading: $MANIFEST to destination ftp folder ~{target_path}"
+    echo "uploading: $MANIFEST to destination ftp folder ${path}"
     echo "Asymmetrik script version: $ASYMMETRIK_REPO_COMMIT"
     node src/main.js --debug \
       --uploadFiles="$MANIFEST" \
@@ -93,17 +93,17 @@ task biosample_submit_tsv_ftp_upload {
   input {
     File meta_submit_tsv
     File config_js
-    String target_path
+    Boolean production_submission
   }
   String base=basename(meta_submit_tsv, '.tsv')
   meta {
     description: "This registers a table of metadata with NCBI BioSample. It accepts a TSV similar to the web UI input at submit.ncbi.nlm.nih.gov, but converts to an XML, submits via their FTP/XML API, awaits a response, and retrieves a resulting attributes table and returns that as a TSV. This task registers live data with the production NCBI database."
   }
   command <<<
-    # append current date to the second to end of target_path 
-    if [ ~"{target_path}" == "production" ] || [ "~{target_path}" == "Production" ]; then
+    # if this is a production submission, then path = production
+     if ~{production_submission}; then
       path="Production"
-    else # if they don't put in production, it will default to Test
+    else # this is a test submission
       path="Test"
     fi
 
