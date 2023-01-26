@@ -111,7 +111,7 @@ task prune_table {
     # remove required rows with blank cells from table
     table, excluded_samples = remove_nas(table, required_fields)
     with open("excluded_samples.tsv", "a") as exclusions:
-      exclusions.write("\nSamples excluded for missing required metadata (will have empty values in indicated columns):\n")
+      exclusions.write("Samples excluded for missing required metadata (will have empty values in indicated columns):\n")
     excluded_samples.to_csv("excluded_samples.tsv", mode='a', sep='\t')
 
     # add bioproject_accesion to table
