@@ -11,6 +11,8 @@ task prune_table {
     String bioproject
     String gcp_bucket_uri
     Boolean skip_biosample
+    String read1_column_name = "read1"
+    String read2_column_name = "read2"
   }
   command <<<
     # when running on terra, comment out all input_table mentions
@@ -31,9 +33,20 @@ task prune_table {
     import numpy as np
     import os
 
+    # set a function to remove NA values and return the cleaned table and a table of excluded samples
+    def remove_nas(table, required_metadata):
+      table.replace(r'^\s+$', np.nan, regex=True) # replace blank cells with NaNs 
+      excluded_samples = table[table[required_metadata].isna().any(axis=1)] # write out all rows that are required with NaNs to a new table
+      excluded_samples.set_index("~{table_name}_id".lower(), inplace=True) # convert the sample names to the index so we can determine what samples are missing what
+      excluded_samples = excluded_samples[excluded_samples.columns.intersection(required_metadata)] # remove all optional columns so only required columns are shown
+      excluded_samples = excluded_samples.loc[:, excluded_samples.isna().any()] # remove all NON-NA columns so only columns with NAs remain; Shelly is a wizard and I love her 
+      table.dropna(subset=required_metadata, axis=0, how='any', inplace=True) # remove all rows that are required with NaNs from table
+
+      return table, excluded_samples
+
     # read export table into pandas
     tablename = "~{table_name}-data.tsv"
-    table = pd.read_csv(tablename, delimiter='\t', header=0)
+    table = pd.read_csv(tablename, delimiter='\t', header=0, dtype={"~{table_name}_id": 'str'}) # ensure sample_id is always a string)
 
     # extract the samples for upload from the entire table
     table = table[table["~{table_name}_id"].isin("~{sep='*' sample_names}".split("*"))]
@@ -85,21 +98,22 @@ task prune_table {
       raise Exception('Only "Microbe", "Virus", "Pathogen" and "Wastewater" are supported as acceptable input for the \`biosample_type\` variable at this time. You entered ~{biosample_type}.')
 
     # sra metadata is the same regardless of biosample_type package, but I'm separating it out in case we find out this is incorrect
-    sra_fields = ["~{table_name}_id", "submission_id", "library_ID", "title", "library_strategy", "library_source", "library_selection", "library_layout", "platform", "instrument_model", "design_description", "filetype", "read1", "read2"] # make some of these optional; for when there is single-end data
-    
-    # if biosample accessions are provided, add those to the end of the sra_metadata field
+    sra_required = ["~{table_name}_id", "submission_id", "library_ID", "title", "library_strategy", "library_source", "library_selection", "library_layout", "platform", "instrument_model", "design_description", "filetype", "~{read1_column_name}"]
+    sra_optional = ["~{read2_column_name}"]
+
+    # if biosample accessions are provided, add those to the end of the sra_required field
     if (os.environ["skip_bio"] == "true"):
-      sra_fields.append("biosample_accession")
+      sra_required.append("biosample_accession")
 
     # combine all required fields into one array for easy removal of NaN cells
-    required_fields = required_metadata + sra_fields
+    required_fields = required_metadata + sra_required
 
     # remove required rows with blank cells from table
-    table.replace(r'^\s+$', np.nan, regex=True) # replace blank cells with NaNs 
-    excluded_samples = table[table[required_fields].isna().any(axis=1)] # write out all rows that are required with NaNs to a new table
-    excluded_samples["~{table_name}_id"].to_csv("excluded_samples.tsv", sep='\t', index=False, header=False) # write the excluded names out to a file
-    table.dropna(subset=required_fields, axis=0, how='any', inplace=True) # remove all rows that are required with NaNs from table
-    
+    table, excluded_samples = remove_nas(table, required_fields)
+    with open("excluded_samples.tsv", "a") as exclusions:
+      exclusions.write("Samples excluded for missing required metadata (will have empty values in indicated columns):\n")
+    excluded_samples.to_csv("excluded_samples.tsv", mode='a', sep='\t')
+
     # add bioproject_accesion to table
     table["bioproject_accession"] = "~{bioproject}"
     
@@ -113,18 +127,21 @@ task prune_table {
     biosample_metadata.rename(columns={"submission_id" : "sample_name"}, inplace=True)
 
     # extract the required metadata from the table; rename first column 
-    sra_metadata = table[sra_fields].copy()
+    sra_metadata = table[sra_required].copy()
+    for column in sra_optional:
+      if column in table.columns:
+        sra_metadata[column] = table[column]
     sra_metadata.rename(columns={"submission_id" : "sample_name"}, inplace=True)
 
     # prettify the filenames and rename them to be sra compatible
-    sra_metadata["read1"] = sra_metadata["read1"].map(lambda filename: filename.split('/').pop())
-    sra_metadata["read2"] = sra_metadata["read2"].map(lambda filename2: filename2.split('/').pop())   
-    sra_metadata.rename(columns={"read1" : "filename", "read2" : "filename2"}, inplace=True)
- 
-    ### Create a file that contains the names of all the reads so we can use gsutil -m cp
-    table["read1"].to_csv("filepaths.tsv", index=False, header=False)
-    table["read2"].to_csv("filepaths.tsv", mode='a', index=False, header=False)
-
+    sra_metadata["~{read1_column_name}"] = sra_metadata["~{read1_column_name}"].map(lambda filename: filename.split('/').pop())
+    sra_metadata.rename(columns={"~{read1_column_name}" : "filename"}, inplace=True)
+    table["~{read1_column_name}"].to_csv("filepaths.tsv", index=False, header=False) # make a file that contains the names of all the reads so we can use gsutil -m cp
+    if "~{read2_column_name}" in sra_metadata.columns:
+      sra_metadata["~{read2_column_name}"] = sra_metadata["~{read2_column_name}"].map(lambda filename2: filename2.split('/').pop())   
+      sra_metadata.rename(columns={"~{read2_column_name}" : "filename2"}, inplace=True)
+      table["~{read2_column_name}"].to_csv("filepaths.tsv", mode='a', index=False, header=False)
+    
     # write metadata tables to tsv output files
     biosample_metadata.to_csv("biosample_table.tsv", sep='\t', index=False)
     sra_metadata.to_csv("sra_table_to_edit.tsv", sep='\t', index=False)
